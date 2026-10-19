@@ -910,6 +910,12 @@
     EXTRAS: EXTRAS,
     NAMES: NAMES,
     normalize: normalize,
+    toJSON: function (p) {
+      const n = normalize(p);
+      const out = {};
+      SIGN_FIELDS.forEach(function (key) { out[key] = n[key]; });
+      return out;
+    },
     svg: svg,
     randomize: randomize,
     displayName: displayName,

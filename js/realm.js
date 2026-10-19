@@ -1327,6 +1327,22 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     use: use,
     resize: resize,
     groundId: function () { return THEMES[theme].ground; },
+    encodeCells: function (cells) {
+      return cells.map(function (id) {
+        const n = id === "grass" ? 0 : TILES.findIndex(function (tile) { return tile.id === id; }) + 1;
+        return (n < 1 ? 0 : n).toString(36);
+      }).join("");
+    },
+    decodeCells: function (text, count) {
+      const cells = [];
+      const src = String(text || "");
+      for (let i = 0; i < count; i++) {
+        const n = parseInt(src.charAt(i), 36);
+        if (!n) cells.push("grass");
+        else cells.push(TILES[n - 1] ? TILES[n - 1].id : "grass");
+      }
+      return cells;
+    },
     normalize: normalize,
     cell: cell,
     walkable: walkable,

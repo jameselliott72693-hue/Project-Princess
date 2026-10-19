@@ -343,6 +343,8 @@
       '<button type="button" class="btn" data-act="new-princess">' + ico("plus") + "<span>New</span></button>" +
       '<button type="button" class="btn primary" data-act="save-princess">' + ico("save") + "<span>Save</span></button>" +
       '<button type="button" class="btn" data-act="picture">' + ico("picture") + "<span>Picture</span></button>" +
+      '<button type="button" class="btn" data-act="color-princess">' + ico("spark") + "<span>Color</span></button>" +
+      '<button type="button" class="btn" data-act="share-princess">' + ico("save") + "<span>Share</span></button>" +
       '<button type="button" class="btn" data-act="go-explore">' + ico("walk") + "<span>Walk</span></button>" +
       "</div></div><div class=\"panel-card\"><div class=\"tabs\">" +
       tabs.map(function (tab) {
@@ -375,6 +377,8 @@
       '<button type="button" class="btn" data-act="templates">' + ico("grid") + "<span>Starters</span></button>" +
       '<button type="button" class="btn" data-act="save-kingdom">' + ico("save") + "<span>Save</span></button>" +
       '<button type="button" class="btn" data-act="kingdom-picture">' + ico("picture") + "<span>Picture</span></button>" +
+      '<button type="button" class="btn" data-act="color-kingdom">' + ico("spark") + "<span>Color</span></button>" +
+      '<button type="button" class="btn" data-act="share-kingdom">' + ico("save") + "<span>Share</span></button>" +
       "</div>" +
       '<div class="board-wrap" id="board-wrap"><canvas class="board' + (buildSliding ? " slide-mode" : " place-mode") + (buildBig ? " is-big" : "") + '" id="board"></canvas></div>' +
       '<p class="empty-note" id="tool-label"></p></div>' +
@@ -1184,6 +1188,173 @@
     img.src = url;
   }
 
+  function encodeShare(obj) {
+    const json = JSON.stringify(obj);
+    return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function decodeShare(text) {
+    try {
+      const pad = text.length % 4 ? "====".slice(text.length % 4) : "";
+      const b64 = String(text || "").replace(/-/g, "+").replace(/_/g, "/") + pad;
+      return JSON.parse(decodeURIComponent(escape(atob(b64))));
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function shareUrl(prefix, obj) {
+    return location.href.split("#")[0] + prefix + encodeShare(obj);
+  }
+
+  function openShareLink(url) {
+    showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>Share</h2><p class="modal-lead">Copy this link.</p>' +
+      '<input class="name-field" id="share-url" readonly value="' + Paint.esc(url) + '">' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn primary" id="copy-share">Copy</button><button type="button" class="btn" id="close-share">Close</button></div></div>', "share", true);
+    document.getElementById("close-share").onclick = hideModal;
+    document.getElementById("copy-share").onclick = function () {
+      const input = document.getElementById("share-url");
+      input.focus();
+      input.select();
+      const done = function () { toast("Copied"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () {
+          try { document.execCommand("copy"); done(); } catch (err) { toast("Select the link"); }
+        });
+        return;
+      }
+      try { document.execCommand("copy"); done(); } catch (err2) { toast("Select the link"); }
+    };
+  }
+
+  function readShare() {
+    const hash = location.hash || "";
+    let kind = "";
+    let data = null;
+    if (hash.indexOf("#p=") === 0) { kind = "p"; data = decodeShare(hash.slice(3)); }
+    else if (hash.indexOf("#k=") === 0) { kind = "k"; data = decodeShare(hash.slice(3)); }
+    if (hash) history.replaceState(null, "", location.pathname + location.search);
+    if (!data) return "";
+    if (kind === "p") {
+      working = Princess.normalize(data);
+      Store.data.princess = working;
+      Store.persist();
+      toast("Opened a princess");
+      return "p";
+    }
+    if (kind === "k" && data.g && data.c && data.r) {
+      const count = Number(data.c) * Number(data.r);
+      const next = Realm.pack({
+        name: data.n,
+        theme: data.t,
+        cols: Number(data.c),
+        rows: Number(data.r),
+        cells: Realm.decodeCells(data.g, count)
+      });
+      next.name = Paint.cleanName(data.n) || "Shared";
+      next.quest = Store.blankQuest();
+      Store.data.kingdom = next;
+      Realm.use(next);
+      Store.persist();
+      toast("Opened a kingdom");
+      return "k";
+    }
+    return "";
+  }
+
+  function inkPage(source) {
+    const scale = Math.min(1, 900 / source.width);
+    const w = Math.max(2, Math.round(source.width * scale));
+    const h = Math.max(2, Math.round(source.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(source, 0, 0, w, h);
+    const src = ctx.getImageData(0, 0, w, h);
+    const out = ctx.createImageData(w, h);
+    function lum(x, y) {
+      const i = (y * w + x) * 4;
+      return src.data[i] * 0.3 + src.data[i + 1] * 0.59 + src.data[i + 2] * 0.11;
+    }
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        let edge = false;
+        if (x > 0 && y > 0 && x < w - 1 && y < h - 1) {
+          const gx = lum(x + 1, y) - lum(x - 1, y);
+          const gy = lum(x, y + 1) - lum(x, y - 1);
+          edge = Math.abs(gx) + Math.abs(gy) > 36;
+        }
+        const v = edge ? 45 : 255;
+        out.data[i] = v;
+        out.data[i + 1] = v;
+        out.data[i + 2] = v;
+        out.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(out, 0, 0);
+    return canvas;
+  }
+
+  function presentColoring(canvas, filename) {
+    const url = canvas.toDataURL("image/png");
+    document.getElementById("print-sheet").innerHTML = '<img alt="Coloring page" src="' + url + '">';
+    showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>Color</h2><img class="color-preview" alt="Coloring page" src="' + url + '">' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn primary" id="print-color">Print</button><button type="button" class="btn" id="save-color">Save</button><button type="button" class="btn" id="close-color">Close</button></div></div>', "color", true);
+    document.getElementById("close-color").onclick = hideModal;
+    document.getElementById("print-color").onclick = function () { window.print(); };
+    document.getElementById("save-color").onclick = function () {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast("Coloring page ready");
+    };
+  }
+
+  function colorPrincess() {
+    const svg = Princess.svg(working, { plain: true, export: true });
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function () {
+      const src = document.createElement("canvas");
+      src.width = 800;
+      src.height = 1040;
+      const ctx = src.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 800, 1040);
+      ctx.drawImage(img, 0, 0, 800, 1040);
+      URL.revokeObjectURL(url);
+      presentColoring(inkPage(src), fileBase(Princess.displayName(working)) + "-color.png");
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      toast("Coloring page did not work");
+    };
+    img.src = url;
+  }
+
+  function colorKingdom() {
+    const src = document.createElement("canvas");
+    src.width = Realm.WORLD_W;
+    src.height = Realm.WORLD_H;
+    const ctx = src.getContext("2d");
+    Realm.draw(ctx, Store.data.kingdom.cells, {
+      cols: Store.data.kingdom.cols,
+      rows: Store.data.kingdom.rows,
+      theme: Store.data.kingdom.theme,
+      anim: 0,
+      now: 0
+    });
+    presentColoring(inkPage(src), fileBase(Store.data.kingdom.name || "kingdom") + "-color.png");
+  }
+
   function downloadKingdom() {
     const canvas = document.getElementById("board");
     if (!canvas) return;
@@ -1334,6 +1505,12 @@
       return;
     }
     if (act === "picture") { downloadPortrait(); Sfx.pop(); return; }
+    if (act === "color-princess") { colorPrincess(); Sfx.tap(); return; }
+    if (act === "share-princess") {
+      openShareLink(shareUrl("#p=", Princess.toJSON(working)));
+      Sfx.tap();
+      return;
+    }
     if (act === "save-kingdom") {
       const result = Store.saveKingdom(Store.data.kingdom);
       if (!result.ok && result.reason === "same") toast("Already saved");
@@ -1342,6 +1519,19 @@
       return;
     }
     if (act === "kingdom-picture") { downloadKingdom(); Sfx.pop(); return; }
+    if (act === "color-kingdom") { colorKingdom(); Sfx.tap(); return; }
+    if (act === "share-kingdom") {
+      const kingdom = Store.data.kingdom;
+      openShareLink(shareUrl("#k=", {
+        n: kingdom.name,
+        t: kingdom.theme,
+        c: kingdom.cols,
+        r: kingdom.rows,
+        g: Realm.encodeCells(kingdom.cells)
+      }));
+      Sfx.tap();
+      return;
+    }
     if (act === "templates") { openTemplates(); Sfx.tap(); return; }
     if (act === "size") {
       const nextCols = Number(btn.dataset.cols);
@@ -1608,7 +1798,13 @@
       if (document.hidden) stopLoop();
       else if (view === "build" || view === "explore") startLoop();
     });
-    show("home");
+    const shared = readShare();
+    show(shared === "k" ? "build" : shared === "p" ? "design" : "home");
+    window.addEventListener("hashchange", function () {
+      const next = readShare();
+      if (next === "k") show("build");
+      else if (next === "p") show("design");
+    });
     if (!Store.data.helpSeen) openHelp();
   }
 
