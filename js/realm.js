@@ -1103,6 +1103,74 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     ctx.fillRect(4, -30, 4, 16);
   }
 
+  function drawPet(ctx, pose, princess) {
+    const spot = foot(pose.c, pose.r);
+    const bob = Math.sin((pose.phase || 0) * Math.PI * 2) * 3;
+    const flip = pose.facing === "w" ? -1 : 1;
+    const color = princess.petColor || "#e8a87c";
+    ctx.save();
+    ctx.translate(spot.x + (pose.beside || -14), spot.y + bob);
+    ctx.scale(flip, 1);
+    shadow(ctx, 0, 2, 8, 3);
+    ctx.fillStyle = color;
+    if (princess.pet === "dragon") {
+      ctx.beginPath();
+      ctx.ellipse(0, -8, 9, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = Paint.mix(color, "#ffffff", 0.35);
+      ctx.beginPath();
+      ctx.ellipse(-6, -12, 5, 3, -0.6, 0, Math.PI * 2);
+      ctx.ellipse(6, -12, 5, 3, 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(6, -10, 5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (princess.pet === "pup") {
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 8, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(-5, -12, 3, 4, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(5, -12, 3, 4, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = Paint.mix(color, "#5a3144", 0.35);
+      ctx.beginPath();
+      ctx.moveTo(-7, -4);
+      ctx.quadraticCurveTo(-14, -10, -8, -1);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 8, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-6, -10);
+      ctx.lineTo(-3, -16);
+      ctx.lineTo(0, -10);
+      ctx.moveTo(2, -10);
+      ctx.lineTo(5, -16);
+      ctx.lineTo(8, -10);
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-6, -4);
+      ctx.quadraticCurveTo(-12, -12, -4, -8);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#3a2a30";
+    ctx.fillRect(2, -9, 2, 2);
+    ctx.fillRect(6, -9, 2, 2);
+    if (pose.react) {
+      ctx.fillStyle = "#f2849a";
+      ctx.beginPath();
+      ctx.moveTo(10, -16);
+      ctx.bezierCurveTo(6, -22, 14, -22, 10, -14);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawSprite(ctx, pose, princess) {
     const spot = foot(pose.c, pose.r);
     const bob = Math.sin((pose.phase || 0) * Math.PI * 2) * 2.4;
@@ -1210,10 +1278,15 @@ function drawGate(ctx, x, y, cells, c, r, open) {
         }
       }
       let spriteRow = -1;
+      let petRow = -1;
       if (view.pose) spriteRow = Math.max(0, Math.min(rows - 1, Math.floor(view.pose.r)));
+      if (view.pet) petRow = Math.max(0, Math.min(rows - 1, Math.floor(view.pet.r)));
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           drawProp(ctx, c * TILE, PAD + r * TILE, cells[r * cols + c], c, r, cells, view);
+        }
+        if (r === petRow && view.pet && view.princess && view.princess.pet && view.princess.pet !== "none") {
+          drawPet(ctx, view.pet, view.princess);
         }
         if (r === spriteRow && view.princess) drawSprite(ctx, view.pose, view.princess);
       }

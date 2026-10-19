@@ -26,7 +26,7 @@ The pages use big buttons, short labels, and a map you can place or slide. On a 
 
 **Build** — tap a piece, then tap the map. Pieces include castle walls, towers, a gate, and a throne; grass, paths, water, bridges, trees, gardens, and flowers; houses, a bakery, and market stalls; animals and small decorations. Winter adds snow, ice, pines, and snowmen. Seaside adds sand, sea, palms, shells, and boats. **Cozy**, **Wide**, and **Grand** change the map size. Older saves stay cozy meadow maps. **Erase** paints the ground for the current theme. **Undo** removes the last stroke. **Starters** opens a meadow, a little castle, a riverside, a royal garden, a snow castle, a sunny shore, or a grand meadow. **Save** keeps the kingdom on this device.
 
-**Explore** — from Design, tap **Walk**. From Build, tap **Explore**. Move with the arrow buttons, the arrow keys, WASD, or a tap on open ground. On a wide or grand map the view follows her. She will not cross walls, sea, or water. Bridges and the castle gate are fine. A fountain sparkles, animals react, and the gate, throne, houses, bakery, and market open a simple room.
+**Explore** — from Design, tap **Walk**. From Build, tap **Explore**. Move with the arrow buttons, the arrow keys, WASD, or a tap on open ground. On a wide or grand map the view follows her. Her chosen pet walks along behind her and perks up at fountains, flowers, and animals. She will not cross walls, sea, or water. Bridges and the castle gate are fine. A fountain sparkles, animals react, and the gate, throne, houses, bakery, and market open a simple room.
 
 **Sound** in the header can be muted. That choice is remembered on this device. **Help** opens a short how-to.
 
@@ -47,7 +47,7 @@ The rounded letters are [Fredoka](https://github.com/hafontia/Fredoka-One) by th
 - Sharing a princess or a kingdom as a file or a code
 - Printable coloring pages from a portrait or a map
 - Rooms you can walk inside, not only peek into
-- Pets that follow along the path
+- Pets that follow along the path (done)
 - More languages, with the same big icons
 - A quiet music box with a few short songs
 - Seasonal gardens and more starter maps

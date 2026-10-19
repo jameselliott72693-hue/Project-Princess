@@ -43,6 +43,10 @@
   let pos = { c: 0, r: 0, facing: "s" };
   let visual = { c: 0, r: 0, phase: 0 };
   let move = null;
+  let pet = null;
+  let petVisual = { c: 0, r: 0, phase: 0 };
+  let petMove = null;
+  let petTrail = [];
   let path = [];
   let afterMove = null;
   let dirQueue = [];
@@ -130,6 +134,7 @@
       const start = Realm.startTile(Store.data.kingdom.cells);
       pos = { c: start.c, r: start.r, facing: "s" };
       visual = { c: pos.c, r: pos.r, phase: 0 };
+      placePet();
       renderExplore();
       startLoop();
     }
@@ -464,6 +469,14 @@
       showGrid: view === "build",
       pose: exploring ? { c: visual.c, r: visual.r, facing: pos.facing, phase: visual.phase || 0 } : null,
       princess: exploring ? currentExplorer() : null,
+      pet: exploring && pet ? {
+        c: petVisual.c,
+        r: petVisual.r,
+        facing: pet.facing,
+        phase: petVisual.phase || 0,
+        react: pet.happy > performance.now(),
+        beside: -16
+      } : null,
       particles: particles,
       react: react,
       gateOpen: gateOpen,
@@ -592,6 +605,27 @@
     return dirQueue.length ? dirQueue[dirQueue.length - 1] : null;
   }
 
+  function placePet() {
+    petMove = null;
+    petTrail = [];
+    const princess = currentExplorer();
+    if (!princess.pet || princess.pet === "none") {
+      pet = null;
+      return;
+    }
+    const cells = Store.data.kingdom.cells;
+    const dirs = [{ c: 0, r: 1 }, { c: -1, r: 0 }, { c: 1, r: 0 }, { c: 0, r: -1 }];
+    let spot = null;
+    for (let i = 0; i < dirs.length; i++) {
+      const c = pos.c + dirs[i].c;
+      const r = pos.r + dirs[i].r;
+      if (Realm.walkable(cells, c, r)) { spot = { c: c, r: r }; break; }
+    }
+    if (!spot) spot = { c: pos.c, r: pos.r };
+    pet = { c: spot.c, r: spot.r, facing: "n", happy: 0 };
+    petVisual = { c: spot.c, r: spot.r, phase: 0 };
+  }
+
   function beginMove(next) {
     move = { from: { c: pos.c, r: pos.r }, to: next, age: 0, dur: reduceMotion() ? 0 : 230 };
     const dc = next.c - pos.c;
@@ -604,13 +638,20 @@
   }
 
   function finishMove() {
+    if (pet) petTrail.push({ c: move.from.c, r: move.from.r });
     pos.c = move.to.c;
     pos.r = move.to.r;
     move = null;
     const id = Realm.cell(Store.data.kingdom.cells, pos.c, pos.r);
     const kind = Realm.interactKind(id);
-    if (kind === "animal") triggerAnimal(pos.c, pos.r);
-    if (kind === "flowers") spawnSparkle(pos.c, pos.r, 7);
+    if (kind === "animal") {
+      triggerAnimal(pos.c, pos.r);
+      delightPet();
+    }
+    if (kind === "flowers") {
+      spawnSparkle(pos.c, pos.r, 7);
+      delightPet();
+    }
     if (path.length === 0 && afterMove) {
       const fn = afterMove;
       afterMove = null;
@@ -699,16 +740,69 @@
     if (!kind) return;
     if (kind === "fountain" || kind === "flowers" || kind === "sparkle") {
       spawnSparkle(c, r, kind === "fountain" ? 16 : 8);
+      delightPet();
       Sfx.chime();
       return;
     }
     if (kind === "animal") {
       triggerAnimal(c, r);
+      delightPet();
       return;
     }
     if (kind === "castle") gateOpen[c + "," + r] = performance.now() + 1600;
     openInterior(kind === "castle" ? "castle" : kind);
     Sfx.open();
+  }
+
+  function delightPet() {
+    if (!pet) return;
+    pet.happy = performance.now() + 900;
+  }
+
+  function stepPet(dt) {
+    if (!pet) return;
+    if (petMove) {
+      petMove.age += dt;
+      const u = petMove.dur <= 0 ? 1 : Math.min(1, petMove.age / petMove.dur);
+      const eased = u * u * (3 - 2 * u);
+      petVisual.c = petMove.from.c + (petMove.to.c - petMove.from.c) * eased;
+      petVisual.r = petMove.from.r + (petMove.to.r - petMove.from.r) * eased;
+      petVisual.phase = u;
+      if (u >= 1) {
+        pet.c = petMove.to.c;
+        pet.r = petMove.to.r;
+        petMove = null;
+        petVisual.c = pet.c;
+        petVisual.r = pet.r;
+        petVisual.phase = pet.happy > performance.now() ? 0.5 : 0;
+      }
+      return;
+    }
+    if (!petTrail.length) return;
+    const next = petTrail[0];
+    if (next.c === pet.c && next.r === pet.r) {
+      petTrail.shift();
+      return;
+    }
+    const cells = Store.data.kingdom.cells;
+    let step = null;
+    if (Math.abs(next.c - pet.c) + Math.abs(next.r - pet.r) === 1 && Realm.walkable(cells, next.c, next.r)) step = next;
+    else {
+      const route = Realm.astar(cells, pet, next);
+      if (route && route[0]) step = route[0];
+    }
+    if (!step) {
+      petTrail.shift();
+      return;
+    }
+    if (step.c === next.c && step.r === next.r) petTrail.shift();
+    const dc = step.c - pet.c;
+    const dr = step.r - pet.r;
+    if (dc > 0) pet.facing = "e";
+    else if (dc < 0) pet.facing = "w";
+    else if (dr > 0) pet.facing = "s";
+    else pet.facing = "n";
+    petMove = { from: { c: pet.c, r: pet.r }, to: step, age: 0, dur: reduceMotion() ? 0 : 200 };
   }
 
   function triggerAnimal(c, r) {
@@ -773,6 +867,7 @@
       item.vy += 28 * sec;
       return item.age < item.life;
     });
+    stepPet(dt);
     keepVisible();
   }
 
@@ -1212,6 +1307,7 @@
     }
     if (act === "explorer") {
       exploreSource = btn.dataset.id;
+      placePet();
       document.querySelectorAll(".who-chip").forEach(function (chip) {
         chip.classList.toggle("is-on", chip.dataset.id === exploreSource);
       });
