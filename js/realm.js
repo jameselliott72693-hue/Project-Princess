@@ -1,21 +1,35 @@
 (function (root) {
   const Paint = root.Paint;
-  const COLS = 12;
-  const ROWS = 8;
+  let cols = 12;
+  let rows = 8;
+  let theme = "meadow";
   const TILE = 64;
   const PAD = 44;
-  const WORLD_W = COLS * TILE;
-  const WORLD_H = PAD + ROWS * TILE;
+
+  const SIZES = [
+    { id: "cozy", label: "Cozy", cols: 12, rows: 8 },
+    { id: "wide", label: "Wide", cols: 18, rows: 12 },
+    { id: "grand", label: "Grand", cols: 24, rows: 16 }
+  ];
+
+  const THEMES = {
+    meadow: { id: "meadow", label: "Meadow", ground: "grass", sky: "#d7f3ff" },
+    winter: { id: "winter", label: "Winter", ground: "snow", sky: "#e7f2ff" },
+    seaside: { id: "seaside", label: "Seaside", ground: "sand", sky: "#d4f6ff" }
+  };
 
   const LEGEND = {
     ".": "grass", p: "path", w: "water", b: "bridge", g: "garden", f: "flowers",
     W: "wall", T: "tower", G: "gate", H: "throne", t: "tree", u: "bush",
     F: "fountain", h: "house", k: "bakery", m: "stall", l: "lamp", n: "bench",
-    a: "banner", r: "bunny", d: "duck", i: "bird", e: "deer", c: "kitten"
+    a: "banner", r: "bunny", d: "duck", i: "bird", e: "deer", c: "kitten",
+    o: "snow", I: "ice", q: "pine", y: "snowman", z: "sand", O: "sea",
+    j: "palm", s: "shell", v: "boat"
   };
 
   const BLOCK = {
-    water: 1, wall: 1, tower: 1, throne: 1, tree: 1, fountain: 1, house: 1, bakery: 1, stall: 1
+    water: 1, sea: 1, wall: 1, tower: 1, throne: 1, tree: 1, pine: 1, palm: 1,
+    fountain: 1, house: 1, bakery: 1, stall: 1, boat: 1
   };
   const ANIMALS = { bunny: 1, duck: 1, bird: 1, deer: 1, kitten: 1 };
 
@@ -39,6 +53,15 @@
     { id: "garden", label: "Garden", group: "nature" },
     { id: "flowers", label: "Flowers", group: "nature" },
     { id: "bush", label: "Bush", group: "nature" },
+    { id: "snow", label: "Snow", group: "nature", theme: "winter" },
+    { id: "ice", label: "Ice", group: "nature", theme: "winter" },
+    { id: "pine", label: "Pine", group: "nature", theme: "winter" },
+    { id: "snowman", label: "Snowman", group: "nature", theme: "winter" },
+    { id: "sand", label: "Sand", group: "nature", theme: "seaside" },
+    { id: "sea", label: "Sea", group: "nature", theme: "seaside" },
+    { id: "palm", label: "Palm", group: "nature", theme: "seaside" },
+    { id: "shell", label: "Shell", group: "nature", theme: "seaside" },
+    { id: "boat", label: "Boat", group: "nature", theme: "seaside" },
     { id: "house", label: "House", group: "town" },
     { id: "bakery", label: "Bakery", group: "town" },
     { id: "stall", label: "Market", group: "town" },
@@ -57,16 +80,17 @@
   TILES.forEach(function (tile) { KNOWN[tile.id] = 1; });
 
   function parse(rows) {
+    const width = rows[0].length;
     const cells = [];
     rows.forEach(function (row) {
-      if (row.length !== COLS) throw new Error("Bad realm row: " + row);
+      if (row.length !== width) throw new Error("Bad realm row: " + row);
       for (let i = 0; i < row.length; i++) {
         const id = LEGEND[row.charAt(i)];
         if (!id) throw new Error("Bad tile " + row.charAt(i));
         cells.push(id);
       }
     });
-    return cells;
+    return { cols: width, rows: rows.length, cells: cells };
   }
 
   const TEMPLATE_ROWS = {
@@ -112,31 +136,139 @@
     ]
   };
 
-  const TEMPLATES = [
-    { id: "meadow", label: "Meadow", cells: parse(TEMPLATE_ROWS.meadow) },
-    { id: "castle", label: "Little castle", cells: parse(TEMPLATE_ROWS.castle) },
-    { id: "river", label: "Riverside", cells: parse(TEMPLATE_ROWS.river) },
-    { id: "garden", label: "Royal garden", cells: parse(TEMPLATE_ROWS.garden) }
+  const WINTER_ROWS = [
+    "qq..oy..oo..oo..qq",
+    "qTooooooooooooooT.",
+    "qWooooHoooooooooWq",
+    "qWooofffooooooooW.",
+    "qWooooooooooooooW.",
+    "qTWWWWGWWWWWWWWT..",
+    "ooooooppoooo.r.oo.",
+    "oqq..ppo..c.y..qoo",
+    "oooooooooooooooooo",
+    ".h.ooo.k.oooo.m..o",
+    "oooIIIIooooooooooo",
+    "qqooooooooooooooqq"
   ];
 
+  const SEASIDE_ROWS = [
+    "jj..zzzzzzzzzz..jj",
+    "j.zzzzzzzzzzzzzz.j",
+    "zzzzsszzzzFzzzzzzz",
+    "zzzzzzzzppzzzzzz.e",
+    "OOOOObOOOOObOOOOOO",
+    "OOOOObOOOOObOOOOOO",
+    "zzzzppzzzzzz..d..z",
+    ".hz.pp..c....k..mz",
+    "zzzzzzzzzzzzzzzzzz",
+    "..v..zzzzznzzzzz.j",
+    "zzzzsszzzzzzzzsszz",
+    "jjzzzzzzzzzzzzzzjj"
+  ];
+
+  function sizedTemplate(id, label, themeId, parsed) {
+    return {
+      id: id,
+      label: label,
+      theme: themeId,
+      cols: parsed.cols,
+      rows: parsed.rows,
+      cells: parsed.cells
+    };
+  }
+
+  const cozyCastle = parse(TEMPLATE_ROWS.castle);
+
+  function embedTemplate(id, label, themeId, base, wide, tall) {
+    const ground = THEMES[themeId].ground;
+    const edge = themeId === "winter" ? "pine" : themeId === "seaside" ? "palm" : "tree";
+    const cells = [];
+    const ox = Math.floor((wide - base.cols) / 2);
+    const oy = Math.floor((tall - base.rows) / 2);
+    for (let r = 0; r < tall; r++) {
+      for (let c = 0; c < wide; c++) {
+        const sc = c - ox;
+        const sr = r - oy;
+        if (sc >= 0 && sr >= 0 && sc < base.cols && sr < base.rows) cells.push(base.cells[sr * base.cols + sc]);
+        else if (r === 0 || c === 0 || r === tall - 1 || c === wide - 1) cells.push(edge);
+        else cells.push(ground);
+      }
+    }
+    return { id: id, label: label, theme: themeId, cols: wide, rows: tall, cells: cells };
+  }
+
+  const TEMPLATES = [
+    sizedTemplate("meadow", "Meadow", "meadow", parse(TEMPLATE_ROWS.meadow)),
+    sizedTemplate("castle", "Little castle", "meadow", cozyCastle),
+    sizedTemplate("river", "Riverside", "meadow", parse(TEMPLATE_ROWS.river)),
+    sizedTemplate("garden", "Royal garden", "meadow", parse(TEMPLATE_ROWS.garden)),
+    sizedTemplate("winter", "Snow castle", "winter", parse(WINTER_ROWS)),
+    sizedTemplate("seaside", "Sunny shore", "seaside", parse(SEASIDE_ROWS)),
+    embedTemplate("grand", "Grand meadow", "meadow", cozyCastle, 24, 16)
+  ];
+
+  function templateById(id) {
+    return TEMPLATES.filter(function (item) { return item.id === id; })[0] || TEMPLATES[1];
+  }
+
   function templateCells(id) {
-    const found = TEMPLATES.filter(function (item) { return item.id === id; })[0] || TEMPLATES[1];
-    return found.cells.slice();
+    return templateById(id).cells.slice();
+  }
+
+  function sizeOk(c, r) {
+    return SIZES.some(function (size) { return size.cols === c && size.rows === r; });
+  }
+
+  function pack(raw) {
+    const src = raw && Array.isArray(raw.cells) ? raw.cells : (Array.isArray(raw) ? raw : []);
+    let c = raw && Number(raw.cols);
+    let r = raw && Number(raw.rows);
+    let nextTheme = raw && THEMES[raw.theme] ? raw.theme : "meadow";
+    if (!sizeOk(c, r)) {
+      if (src.length === 18 * 12) { c = 18; r = 12; }
+      else if (src.length === 24 * 16) { c = 24; r = 16; }
+      else { c = 12; r = 8; }
+    }
+    const ground = THEMES[nextTheme].ground;
+    const cells = [];
+    for (let y = 0; y < r; y++) {
+      for (let x = 0; x < c; x++) {
+        const id = src[y * c + x];
+        cells.push(KNOWN[id] ? id : ground);
+      }
+    }
+    return { cells: cells, cols: c, rows: r, theme: nextTheme };
+  }
+
+  function use(map) {
+    const packed = pack(map);
+    cols = packed.cols;
+    rows = packed.rows;
+    theme = packed.theme;
+    publish();
+    return packed;
+  }
+
+  function resize(map, nextCols, nextRows) {
+    const src = pack(map);
+    const ground = THEMES[src.theme].ground;
+    const cells = [];
+    for (let y = 0; y < nextRows; y++) {
+      for (let x = 0; x < nextCols; x++) {
+        if (x < src.cols && y < src.rows) cells.push(src.cells[y * src.cols + x]);
+        else cells.push(ground);
+      }
+    }
+    return { cells: cells, cols: nextCols, rows: nextRows, theme: src.theme };
   }
 
   function normalize(cells) {
-    const next = [];
-    const src = Array.isArray(cells) ? cells : [];
-    for (let i = 0; i < COLS * ROWS; i++) {
-      const id = src[i];
-      next.push(KNOWN[id] ? id : "grass");
-    }
-    return next;
+    return pack(cells).cells;
   }
 
   function cell(cells, c, r) {
-    if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return null;
-    return cells[r * COLS + c];
+    if (c < 0 || r < 0 || c >= cols || r >= rows) return null;
+    return cells[r * cols + c];
   }
 
   function walkable(cells, c, r) {
@@ -153,6 +285,7 @@
     if (id === "stall") return "stall";
     if (ANIMALS[id]) return "animal";
     if (id === "flowers") return "flowers";
+    if (id === "snowman" || id === "shell") return "sparkle";
     return null;
   }
 
@@ -229,10 +362,10 @@
   function startTile(cells) {
     let best = null;
     let bestScore = Infinity;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
         if (!walkable(cells, c, r)) continue;
-        const score = Math.abs(c - (COLS - 1) / 2) + (ROWS - 1 - r) * 0.35;
+        const score = Math.abs(c - (cols - 1) / 2) + (rows - 1 - r) * 0.35;
         if (score < bestScore) {
           bestScore = score;
           best = { c: c, r: r };
@@ -279,16 +412,44 @@
   }
 
   function groundKind(id) {
-    if (id === "water" || id === "bridge") return "water";
+    if (id === "water" || id === "bridge" || id === "sea") return id === "sea" ? "sea" : "water";
     if (id === "path") return "path";
     if (id === "garden") return "garden";
+    if (id === "snow" || id === "ice" || id === "sand") return id;
     return "grass";
   }
 
+  function visualKind(kind) {
+    if (theme === "winter") {
+      if (kind === "grass") return "snow";
+      if (kind === "water") return "ice";
+      if (kind === "path") return "snowpath";
+    }
+    if (theme === "seaside") {
+      if (kind === "grass") return "sand";
+      if (kind === "water" || kind === "sea") return "sea";
+      if (kind === "path") return "board";
+    }
+    return kind;
+  }
+
   function drawGround(ctx, x, y, kind, c, r, anim) {
-    if (kind === "water") {
-      ctx.fillStyle = "#7ec8ea";
+    kind = visualKind(kind);
+    if (kind === "water" || kind === "sea" || kind === "ice") {
+      ctx.fillStyle = kind === "ice" ? "#d7f1ff" : kind === "sea" ? "#3aa0c8" : "#7ec8ea";
       ctx.fillRect(x, y, TILE, TILE);
+      if (kind === "ice") {
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 10, y + 18);
+        ctx.lineTo(x + 28, y + 30);
+        ctx.lineTo(x + 22, y + 48);
+        ctx.moveTo(x + 40, y + 12);
+        ctx.lineTo(x + 48, y + 36);
+        ctx.stroke();
+        return;
+      }
       ctx.strokeStyle = "rgba(255,255,255,0.75)";
       ctx.lineWidth = 2;
       const shift = (anim / 18 + c * 8) % TILE;
@@ -304,18 +465,25 @@
       return;
     }
     const even = (c + r) % 2 === 0;
-    ctx.fillStyle = kind === "path" ? "#e6c79a" : kind === "garden" ? "#d7e7a8" : even ? "#8fcb67" : "#84c25d";
+    const fill = kind === "path" || kind === "board" ? "#e6c79a"
+      : kind === "snowpath" ? "#f4fbff"
+      : kind === "garden" ? "#d7e7a8"
+      : kind === "snow" ? (even ? "#f7fbff" : "#e7f3fb")
+      : kind === "sand" ? (even ? "#f6d7a2" : "#f0c98a")
+      : even ? "#8fcb67" : "#84c25d";
+    ctx.fillStyle = fill;
     ctx.fillRect(x, y, TILE, TILE);
-    if (kind === "path") {
-      ctx.fillStyle = "#f6e4c6";
+    if (kind === "path" || kind === "board" || kind === "snowpath" || kind === "sand") {
+      ctx.fillStyle = kind === "sand" ? "rgba(255,255,255,0.35)" : kind === "snowpath" ? "rgba(180,210,230,0.45)" : "#f6e4c6";
       const h = Paint.hash(c, r);
       for (let i = 0; i < 3; i++) {
         ctx.beginPath();
-        ctx.ellipse(x + 12 + ((h >> (i * 2)) % 36), y + 12 + ((h >> (i + 3)) % 34), 8, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 12 + ((h >> (i * 2)) % 36), y + 12 + ((h >> (i + 3)) % 34), kind === "sand" ? 3 : 8, kind === "sand" ? 2 : 6, 0, 0, Math.PI * 2);
         ctx.fill();
       }
       return;
     }
+    if (kind === "snow") return;
     ctx.strokeStyle = "rgba(70,130,50,0.35)";
     ctx.lineWidth = 2;
     const h = Paint.hash(c, r);
@@ -442,6 +610,120 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     ctx.fillStyle = "rgba(255,255,255,0.28)";
     ctx.beginPath();
     ctx.arc(cx - 6, base - 46, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawPine(ctx, x, y) {
+    const cx = x + TILE / 2;
+    const base = y + TILE - 8;
+    shadow(ctx, cx, base, 14, 5);
+    ctx.fillStyle = "#8d5a34";
+    ctx.fillRect(cx - 4, base - 16, 8, 18);
+    ctx.fillStyle = "#245c45";
+    ctx.beginPath();
+    ctx.moveTo(cx, base - 54);
+    ctx.lineTo(cx + 20, base - 18);
+    ctx.lineTo(cx - 20, base - 18);
+    ctx.fill();
+    ctx.fillStyle = "#3d8f68";
+    ctx.beginPath();
+    ctx.moveTo(cx, base - 40);
+    ctx.lineTo(cx + 14, base - 24);
+    ctx.lineTo(cx - 14, base - 24);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, base - 30);
+    ctx.lineTo(cx, base - 36);
+    ctx.lineTo(cx + 7, base - 28);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawPalm(ctx, x, y) {
+    const cx = x + TILE / 2;
+    const base = y + TILE - 8;
+    shadow(ctx, cx, base, 12, 4);
+    ctx.strokeStyle = "#c4844a";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, base);
+    ctx.quadraticCurveTo(cx + 8, base - 22, cx - 2, base - 42);
+    ctx.stroke();
+    const topx = cx - 2;
+    const topy = base - 42;
+    ctx.fillStyle = "#2f9a4a";
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i - 2) * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(topx + Math.cos(a) * 12, topy + Math.sin(a) * 8, 11, 4, a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#e07a3d";
+    ctx.beginPath();
+    ctx.arc(topx + 8, topy + 10, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSnowman(ctx, x, y) {
+    const cx = x + TILE / 2;
+    shadow(ctx, cx, y + TILE - 8, 12, 4);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(cx, y + 46, 14, 0, Math.PI * 2);
+    ctx.arc(cx, y + 28, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#5a3144";
+    ctx.fillRect(cx - 3, y + 25, 2, 2);
+    ctx.fillRect(cx + 3, y + 25, 2, 2);
+    ctx.fillStyle = "#e26d7a";
+    ctx.beginPath();
+    ctx.moveTo(cx + 4, y + 29);
+    ctx.lineTo(cx + 14, y + 31);
+    ctx.lineTo(cx + 4, y + 33);
+    ctx.fill();
+    ctx.fillStyle = "#6aa6d8";
+    ctx.fillRect(cx - 9, y + 16, 18, 4);
+  }
+
+  function drawShell(ctx, x, y) {
+    const cx = x + TILE / 2;
+    shadow(ctx, cx, y + 48, 10, 3);
+    ctx.fillStyle = "#f7c9d4";
+    ctx.beginPath();
+    ctx.arc(cx, y + 42, 12, Math.PI, 0);
+    ctx.fill();
+    ctx.strokeStyle = "#e7a0b4";
+    ctx.lineWidth = 1.5;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(cx, y + 42);
+      ctx.lineTo(cx + i * 4, y + 32);
+      ctx.stroke();
+    }
+  }
+
+  function drawBoat(ctx, x, y) {
+    const cx = x + TILE / 2;
+    shadow(ctx, cx, y + TILE - 8, 16, 4);
+    ctx.fillStyle = "#e26d7a";
+    ctx.beginPath();
+    ctx.moveTo(x + 10, y + 40);
+    ctx.lineTo(x + 54, y + 40);
+    ctx.lineTo(x + 46, y + 52);
+    ctx.lineTo(x + 18, y + 52);
+    ctx.fill();
+    ctx.strokeStyle = "#8d5a34";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 40);
+    ctx.lineTo(cx, y + 16);
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 18);
+    ctx.lineTo(cx + 16, y + 30);
+    ctx.lineTo(cx, y + 36);
     ctx.fill();
   }
 
@@ -760,7 +1042,15 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     else if (id === "gate") {
       const open = state.gateOpen && state.now && state.gateOpen[c + "," + r] > state.now;
       drawGate(ctx, x, y, cells, c, r, open);
-    } else if (id === "tree") drawTree(ctx, x, y, c, r);
+    } else if (id === "tree") {
+      if (theme === "winter") drawPine(ctx, x, y);
+      else if (theme === "seaside") drawPalm(ctx, x, y);
+      else drawTree(ctx, x, y, c, r);
+    } else if (id === "pine") drawPine(ctx, x, y);
+    else if (id === "palm") drawPalm(ctx, x, y);
+    else if (id === "snowman") drawSnowman(ctx, x, y);
+    else if (id === "shell") drawShell(ctx, x, y);
+    else if (id === "boat") drawBoat(ctx, x, y);
     else if (id === "bush") drawBush(ctx, x, y);
     else if (id === "house") drawHouse(ctx, x, y, "#e26d7a");
     else if (id === "bakery") drawBakery(ctx, x, y);
@@ -892,35 +1182,47 @@ function drawGate(ctx, x, y, cells, c, r, open) {
 
   function draw(ctx, cells, state) {
     const view = state || {};
-    ctx.clearRect(0, 0, WORLD_W, WORLD_H);
-    ctx.fillStyle = "#d7f3ff";
-    ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const id = cells[r * COLS + c];
-        drawGround(ctx, c * TILE, PAD + r * TILE, groundKind(id), c, r, view.anim || 0);
-      }
-    }
-    if (view.showGrid) {
-      ctx.strokeStyle = "rgba(255,255,255,0.33)";
-      ctx.lineWidth = 1;
-      for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
-          ctx.strokeRect(c * TILE + 0.5, PAD + r * TILE + 0.5, TILE - 1, TILE - 1);
+    const saved = { cols: cols, rows: rows, theme: theme };
+    if (view.cols) cols = view.cols;
+    if (view.rows) rows = view.rows;
+    if (view.theme && THEMES[view.theme]) theme = view.theme;
+    const worldW = cols * TILE;
+    const worldH = PAD + rows * TILE;
+    try {
+      ctx.clearRect(0, 0, worldW, worldH);
+      ctx.fillStyle = THEMES[theme].sky;
+      ctx.fillRect(0, 0, worldW, worldH);
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const id = cells[r * cols + c];
+          drawGround(ctx, c * TILE, PAD + r * TILE, groundKind(id), c, r, view.anim || 0);
         }
       }
-    }
-    let spriteRow = -1;
-    if (view.pose) spriteRow = Math.max(0, Math.min(ROWS - 1, Math.floor(view.pose.r)));
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        drawProp(ctx, c * TILE, PAD + r * TILE, cells[r * COLS + c], c, r, cells, view);
+      if (view.showGrid) {
+        ctx.strokeStyle = "rgba(255,255,255,0.33)";
+        ctx.lineWidth = 1;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            ctx.strokeRect(c * TILE + 0.5, PAD + r * TILE + 0.5, TILE - 1, TILE - 1);
+          }
+        }
       }
-      if (r === spriteRow && view.princess) drawSprite(ctx, view.pose, view.princess);
+      let spriteRow = -1;
+      if (view.pose) spriteRow = Math.max(0, Math.min(rows - 1, Math.floor(view.pose.r)));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          drawProp(ctx, c * TILE, PAD + r * TILE, cells[r * cols + c], c, r, cells, view);
+        }
+        if (r === spriteRow && view.princess) drawSprite(ctx, view.pose, view.princess);
+      }
+      drawParticles(ctx, view.particles);
+    } finally {
+      cols = saved.cols;
+      rows = saved.rows;
+      theme = saved.theme;
     }
-    drawParticles(ctx, view.particles);
   }
 
   function paintPreview(canvas, tileId) {
@@ -932,24 +1234,26 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     ctx.lineCap = "round";
     const x = 16;
     const y = 24;
-    const cells = new Array(COLS * ROWS).fill("grass");
+    const cells = new Array(cols * rows).fill(THEMES[theme].ground);
+    const grounds = { grass: 1, path: 1, water: 1, snow: 1, ice: 1, sand: 1, sea: 1 };
     drawGround(ctx, x, y, groundKind(tileId), 1, 1, 0);
-    if (tileId !== "grass" && tileId !== "path" && tileId !== "water") {
-      drawProp(ctx, x, y, tileId, 1, 1, cells, { anim: 0, now: 0, react: {}, gateOpen: {} });
-    }
+    if (!grounds[tileId]) drawProp(ctx, x, y, tileId, 1, 1, cells, { anim: 0, now: 0, react: {}, gateOpen: {} });
   }
 
-  root.Realm = {
-    COLS: COLS,
-    ROWS: ROWS,
+  const api = {
     TILE: TILE,
     PAD: PAD,
-    WORLD_W: WORLD_W,
-    WORLD_H: WORLD_H,
+    SIZES: SIZES,
+    THEMES: THEMES,
     GROUPS: GROUPS,
     TILES: TILES,
     TEMPLATES: TEMPLATES,
     templateCells: templateCells,
+    template: templateById,
+    pack: pack,
+    use: use,
+    resize: resize,
+    groundId: function () { return THEMES[theme].ground; },
     normalize: normalize,
     cell: cell,
     walkable: walkable,
@@ -962,4 +1266,15 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     draw: draw,
     paintPreview: paintPreview
   };
+
+  function publish() {
+    api.COLS = cols;
+    api.ROWS = rows;
+    api.WORLD_W = cols * TILE;
+    api.WORLD_H = PAD + rows * TILE;
+    api.theme = theme;
+  }
+
+  publish();
+  root.Realm = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -121,6 +121,7 @@
     afterMove = null;
     if (next === "home") renderHome();
     if (next === "design") renderDesigner();
+    if (next === "build" || next === "explore") Realm.use(Store.data.kingdom);
     if (next === "build") {
       renderBuilder();
       startLoop();
@@ -179,10 +180,11 @@
     scope.querySelectorAll("canvas[data-mini]").forEach(function (canvas) {
       const item = Store.data.savedKingdoms.filter(function (k) { return k.id === canvas.dataset.mini; })[0];
       if (!item) return;
+      const map = Realm.pack(item);
       const ctx = canvas.getContext("2d");
-      const scale = canvas.width / Realm.WORLD_W;
+      const scale = canvas.width / (map.cols * Realm.TILE);
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      Realm.draw(ctx, item.cells, { anim: 0, showGrid: false, now: 0 });
+      Realm.draw(ctx, map.cells, { cols: map.cols, rows: map.rows, theme: map.theme, anim: 0, showGrid: false, now: 0 });
       ctx.setTransform(1, 0, 0, 1, 0, 0);
     });
   }
@@ -351,10 +353,17 @@
   function renderBuilder() {
     main.innerHTML = '<section class="builder"><div class="map-column"><div class="nameplate"><label for="kname">Name</label>' +
       '<input id="kname" class="name-field" maxlength="20" value="' + Paint.esc(Store.data.kingdom.name) + '" autocomplete="off"></div>' +
+      '<div class="choice-row">' + Realm.SIZES.map(function (size) {
+        const on = Store.data.kingdom.cols === size.cols && Store.data.kingdom.rows === size.rows;
+        return '<button type="button" class="btn seg' + (on ? " is-on" : "") + '" data-act="size" data-cols="' + size.cols + '" data-rows="' + size.rows + '">' + size.label + "</button>";
+      }).join("") + Object.keys(Realm.THEMES).map(function (id) {
+        const on = Store.data.kingdom.theme === id;
+        return '<button type="button" class="btn seg' + (on ? " is-on" : "") + '" data-act="theme" data-id="' + id + '">' + Realm.THEMES[id].label + "</button>";
+      }).join("") + "</div>" +
       '<div class="map-tools">' +
       '<button type="button" class="btn primary" data-act="go-explore">' + ico("walk") + "<span>Explore</span></button>" +
       '<button type="button" class="btn" id="undo-build" data-act="undo-build">' + ico("undo") + "<span>Undo</span></button>" +
-      '<button type="button" class="btn' + (buildTool === "grass" ? " primary" : "") + '" id="erase-tool" data-act="erase">' + ico("erase") + "<span>Erase</span></button>" +
+      '<button type="button" class="btn' + (buildTool === Realm.groundId() ? " primary" : "") + '" id="erase-tool" data-act="erase">' + ico("erase") + "<span>Erase</span></button>" +
       '<button type="button" class="btn seg' + (buildSliding ? "" : " is-on") + '" id="mode-place" data-act="mode-place">Place</button>' +
       '<button type="button" class="btn seg' + (buildSliding ? " is-on" : "") + '" id="mode-slide" data-act="mode-slide">Slide</button>' +
       '<button type="button" class="btn" data-act="zoom">' + (buildBig ? "Fit" : "Bigger") + "</button>" +
@@ -379,7 +388,13 @@
   function renderTools() {
     const box = document.getElementById("tools");
     if (!box) return;
-    const tiles = Realm.TILES.filter(function (tile) { return tile.group === buildGroup; });
+    const tiles = Realm.TILES.filter(function (tile) { return tile.group === buildGroup; }).slice().sort(function (a, b) {
+      function rank(tile) {
+        if (!tile.theme) return 1;
+        return tile.theme === Store.data.kingdom.theme ? 0 : 2;
+      }
+      return rank(a) - rank(b);
+    });
     box.innerHTML = tiles.map(function (tile) {
       const on = buildTool === tile.id;
       return '<button type="button" class="tool' + (on ? " is-on" : "") + '" data-act="tool" data-id="' + tile.id + '" aria-pressed="' + (on ? "true" : "false") + '">' +
@@ -400,7 +415,7 @@
   function updateToolLabel() {
     const el = document.getElementById("tool-label");
     if (!el) return;
-    if (buildTool === "grass") el.textContent = "Erasing";
+    if (buildTool === Realm.groundId()) el.textContent = "Erasing";
     else {
       const tile = Realm.TILES.filter(function (item) { return item.id === buildTool; })[0];
       el.textContent = tile ? "Placing " + tile.label : "";
@@ -416,7 +431,20 @@
     canvas.classList.toggle("slide-mode", buildSliding);
     canvas.classList.toggle("place-mode", !buildSliding);
     canvas.classList.toggle("is-big", buildBig);
+    layoutBoard();
     paintBoard();
+  }
+
+  function layoutBoard() {
+    const canvas = document.getElementById("board");
+    const wrap = document.getElementById("board-wrap");
+    if (!canvas || !wrap) return;
+    const avail = wrap.clientWidth || 320;
+    const cozy = Realm.COLS <= 12 && Realm.ROWS <= 8;
+    const tilePx = cozy && !buildBig ? Math.max(36, Math.min(68, avail / Realm.COLS)) : (buildBig ? 68 : 52);
+    const cssW = Realm.COLS * tilePx;
+    canvas.style.width = cssW + "px";
+    canvas.style.height = (cssW * (Realm.WORLD_H / Realm.WORLD_W)) + "px";
   }
 
   function fitCanvas(canvas) {
@@ -455,8 +483,19 @@
     return { c: c, r: r };
   }
 
+  function mapSnap() {
+    const kingdom = Store.data.kingdom;
+    return {
+      cells: kingdom.cells.slice(),
+      cols: kingdom.cols,
+      rows: kingdom.rows,
+      theme: kingdom.theme,
+      name: kingdom.name
+    };
+  }
+
   function pushBuildUndo() {
-    buildUndo.push(Store.data.kingdom.cells.slice());
+    buildUndo.push(mapSnap());
     if (buildUndo.length > 40) buildUndo.shift();
     updateUndoBtn();
   }
@@ -658,7 +697,7 @@
     const id = Realm.cell(Store.data.kingdom.cells, c, r);
     const kind = Realm.interactKind(id);
     if (!kind) return;
-    if (kind === "fountain" || kind === "flowers") {
+    if (kind === "fountain" || kind === "flowers" || kind === "sparkle") {
       spawnSparkle(c, r, kind === "fountain" ? 16 : 8);
       Sfx.chime();
       return;
@@ -745,13 +784,10 @@
     const spot = Realm.foot(visual.c, visual.r);
     const px = spot.x * scale;
     const py = spot.y * scale;
-    const margin = 70;
-    const left = px - wrap.scrollLeft;
-    const top = py - wrap.scrollTop;
-    if (left < margin) wrap.scrollLeft -= margin - left;
-    else if (left > wrap.clientWidth - margin) wrap.scrollLeft += left - (wrap.clientWidth - margin);
-    if (top < margin) wrap.scrollTop -= margin - top;
-    else if (top > wrap.clientHeight - margin) wrap.scrollTop += top - (wrap.clientHeight - margin);
+    const maxL = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+    const maxT = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+    wrap.scrollLeft = Paint.clamp(px - wrap.clientWidth / 2, 0, maxL);
+    wrap.scrollTop = Paint.clamp(py - wrap.clientHeight / 2, 0, maxT);
   }
 
   function hideModal() {
@@ -785,7 +821,7 @@
     showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>How to play</h2><div class="help-steps">' +
       helpStep("a", "dress", "Design", "Tap a look. Give her a name.") +
       helpStep("b", "save", "Save", "Keep her on this device.") +
-      helpStep("c", "castle", "Build", "Tap a piece. Tap the map.") +
+      helpStep("c", "castle", "Build", "Tap a piece. Tap the map. Try a bigger size or a new theme.") +
       helpStep("d", "walk", "Explore", "Tap the ground, the arrows, or the keyboard.") +
       '</div><button type="button" class="btn primary" id="help-go">Let\'s go</button></div>', "help", true);
     document.getElementById("help-go").onclick = hideModal;
@@ -859,27 +895,30 @@
     modal.querySelectorAll("canvas[data-template]").forEach(function (canvas) {
       const tpl = Realm.TEMPLATES.filter(function (item) { return item.id === canvas.dataset.template; })[0];
       const ctx = canvas.getContext("2d");
-      const scale = canvas.width / Realm.WORLD_W;
+      const scale = canvas.width / (tpl.cols * Realm.TILE);
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      Realm.draw(ctx, tpl.cells, { anim: 0, now: 0 });
+      Realm.draw(ctx, tpl.cells, { cols: tpl.cols, rows: tpl.rows, theme: tpl.theme, anim: 0, now: 0 });
     });
   }
 
   function applyTemplate(id) {
     const tpl = Realm.TEMPLATES.filter(function (item) { return item.id === id; })[0];
     if (!tpl) return;
-    if (Realm.same(Store.data.kingdom.cells, tpl.cells)) {
+    const kingdom = Store.data.kingdom;
+    if (kingdom.theme === tpl.theme && kingdom.cols === tpl.cols && kingdom.rows === tpl.rows && Realm.same(kingdom.cells, tpl.cells)) {
       hideModal();
       return;
     }
     confirmModal("Use this starter?", "Yes", function () {
       pushBuildUndo();
       Store.data.kingdom.cells = tpl.cells.slice();
+      Store.data.kingdom.cols = tpl.cols;
+      Store.data.kingdom.rows = tpl.rows;
+      Store.data.kingdom.theme = tpl.theme;
       Store.data.kingdom.name = tpl.label;
-      const input = document.getElementById("kname");
-      if (input) input.value = tpl.label;
+      Realm.use(Store.data.kingdom);
       Store.persist();
-      paintBoard();
+      show("build");
       Sfx.open();
     });
   }
@@ -976,7 +1015,7 @@
       return;
     }
     if (act === "erase") {
-      buildTool = "grass";
+      buildTool = Realm.groundId();
       renderTools();
       updateToolLabel();
       Sfx.tap();
@@ -1082,12 +1121,41 @@
     }
     if (act === "kingdom-picture") { downloadKingdom(); Sfx.pop(); return; }
     if (act === "templates") { openTemplates(); Sfx.tap(); return; }
+    if (act === "size") {
+      const nextCols = Number(btn.dataset.cols);
+      const nextRows = Number(btn.dataset.rows);
+      if (nextCols === Store.data.kingdom.cols && nextRows === Store.data.kingdom.rows) return;
+      confirmModal("Change the map size?", "Yes", function () {
+        pushBuildUndo();
+        const next = Realm.resize(Store.data.kingdom, nextCols, nextRows);
+        next.name = Store.data.kingdom.name;
+        Store.data.kingdom = next;
+        Realm.use(next);
+        Store.persist();
+        show("build");
+        Sfx.open();
+      });
+      return;
+    }
+    if (act === "theme") {
+      const id = btn.dataset.id;
+      if (!Realm.THEMES[id] || Store.data.kingdom.theme === id) return;
+      pushBuildUndo();
+      Store.data.kingdom.theme = id;
+      Realm.use(Store.data.kingdom);
+      if (buildTool === "grass" || buildTool === "snow" || buildTool === "sand") buildTool = Realm.groundId();
+      Store.persist();
+      show("build");
+      Sfx.open();
+      return;
+    }
     if (act === "mode-place") { setSlideMode(false); Sfx.tap(); return; }
     if (act === "mode-slide") { setSlideMode(true); Sfx.tap(); return; }
     if (act === "zoom") {
       buildBig = !buildBig;
       const canvas = document.getElementById("board");
       if (canvas) canvas.classList.toggle("is-big", buildBig);
+      layoutBoard();
       const button = event.target.closest("[data-act='zoom']");
       if (button) button.textContent = buildBig ? "Fit" : "Bigger";
       Sfx.tap();
@@ -1121,13 +1189,13 @@
       const item = Store.data.savedKingdoms.filter(function (k) { return k.id === btn.dataset.id; })[0];
       if (!item) return;
       confirmModal("Open this kingdom?", "Open", function () {
-        if (view !== "build") show("build");
         pushBuildUndo();
-        Store.data.kingdom = { name: item.name, cells: item.cells.slice() };
+        const next = Realm.pack(item);
+        next.name = item.name;
+        Store.data.kingdom = next;
+        Realm.use(next);
         Store.persist();
-        const input = document.getElementById("kname");
-        if (input) input.value = item.name;
-        paintBoard();
+        show("build");
         Sfx.open();
       });
       return;
@@ -1180,10 +1248,22 @@
   function undoBuild() {
     const prev = buildUndo.pop();
     if (!prev) return;
-    Store.data.kingdom.cells = prev;
+    if (Array.isArray(prev)) {
+      Store.data.kingdom.cells = prev;
+    } else {
+      Store.data.kingdom.cells = prev.cells;
+      Store.data.kingdom.cols = prev.cols;
+      Store.data.kingdom.rows = prev.rows;
+      Store.data.kingdom.theme = prev.theme;
+      Store.data.kingdom.name = prev.name;
+    }
+    Realm.use(Store.data.kingdom);
     Store.persist();
-    paintBoard();
-    updateUndoBtn();
+    if (view === "build") show("build");
+    else {
+      bindBoard();
+      updateUndoBtn();
+    }
     Sfx.undo();
   }
 
@@ -1216,6 +1296,7 @@
 
   function boot() {
     Store.load();
+    Realm.use(Store.data.kingdom);
     working = Store.data.princess;
     Sfx.setMuted(Store.data.mute);
     document.getElementById("btn-home").addEventListener("click", function () {
@@ -1254,7 +1335,7 @@
       const canvas = document.getElementById("board");
       if (!canvas || event.target !== canvas || view !== "build" || buildSliding) return;
       painting = true;
-      strokeBase = Store.data.kingdom.cells.slice();
+      strokeBase = mapSnap();
       strokeChanged = false;
       if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
       paintCell(event);
@@ -1263,6 +1344,7 @@
       if (!painting) return;
       paintCell(event);
     });
+    window.addEventListener("resize", function () { layoutBoard(); });
     window.addEventListener("pointerup", function () {
       if (!painting) return;
       painting = false;

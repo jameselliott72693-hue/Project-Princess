@@ -402,9 +402,18 @@ main {
 
 .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.choice-row .btn { min-height: 48px; }
+
 .board-wrap {
   overflow: auto;
-  max-height: min(68vh, 760px);
+  max-height: min(62vh, 680px);
   border-radius: 22px;
   background: #d7f3ff;
   border: 3px solid #fff;
@@ -412,7 +421,7 @@ main {
 }
 
 canvas.board {
-  width: 100%;
+  width: auto;
   height: auto;
   display: block;
   touch-action: none;
@@ -420,7 +429,6 @@ canvas.board {
 }
 
 canvas.board.slide-mode { touch-action: pan-x pan-y; }
-canvas.board.is-big { width: max(100%, 980px); }
 
 .seg { min-height: 52px; }
 
