@@ -197,7 +197,7 @@
   function renderHome() {
     main.innerHTML = '<section class="hero"><div class="hero-castle">' + heroCastle() + '</div><div class="hero-princess">' +
       Princess.svg(working, { thumb: true }) + "</div></section>" +
-      '<h2 class="home-lead">A little kingdom</h2>' +
+      '<h2 class="home-lead">A little kingdom</h2>' + badgeRow() +
       '<div class="home-grid">' +
       '<button type="button" class="home-card design" data-act="go-design">' + ico("dress").replace('class="ico"', 'class="ico big-ico"') + "<span>Design</span></button>" +
       '<button type="button" class="home-card build" data-act="go-build">' + ico("castle").replace('class="ico"', 'class="ico big-ico"') + "<span>Build</span></button>" +
@@ -549,8 +549,9 @@
     );
     main.innerHTML = '<section><div class="map-tools">' +
       '<button type="button" class="btn" data-act="go-build">' + ico("castle") + "<span>Build</span></button>" +
+      '<button type="button" class="btn" data-act="quests">' + ico("spark") + "<span>Quests</span></button>" +
       '<button type="button" class="btn" data-act="zoom">' + (buildBig ? "Fit" : "Bigger") + "</button>" +
-      "</div>" +
+      "</div><p class=\"quest-hint\" id=\"quest-hint\">" + Paint.esc(questHint()) + "</p>" +
       '<div class="board-wrap" id="board-wrap"><canvas class="board slide-mode' + (buildBig ? " is-big" : "") + '" id="board"></canvas></div>' +
       '<div class="dpad">' +
       '<button type="button" class="pad up" data-dir="n" aria-label="Up">' + ico("up") + "</button>" +
@@ -648,6 +649,7 @@
       triggerAnimal(pos.c, pos.r);
       delightPet();
     }
+    noteQuest(pos.c, pos.r, id);
     if (kind === "flowers") {
       spawnSparkle(pos.c, pos.r, 7);
       delightPet();
@@ -737,6 +739,13 @@
   function interact(c, r) {
     const id = Realm.cell(Store.data.kingdom.cells, c, r);
     const kind = Realm.interactKind(id);
+    if ((id === "bakery" || id === "house" || id === "fountain") && noteQuest(c, r, id)) {
+      if (id === "fountain") {
+        spawnSparkle(c, r, 16);
+        delightPet();
+      }
+      return;
+    }
     if (!kind) return;
     if (kind === "fountain" || kind === "flowers" || kind === "sparkle") {
       spawnSparkle(c, r, kind === "fountain" ? 16 : 8);
@@ -752,6 +761,122 @@
     if (kind === "castle") gateOpen[c + "," + r] = performance.now() + 1600;
     openInterior(kind === "castle" ? "castle" : kind);
     Sfx.open();
+  }
+
+  function questState() {
+    if (!Store.data.kingdom.quest) Store.data.kingdom.quest = Store.blankQuest();
+    return Store.data.kingdom.quest;
+  }
+
+  function countTiles(id) {
+    let n = 0;
+    const cells = Store.data.kingdom.cells;
+    for (let i = 0; i < cells.length; i++) if (cells[i] === id) n += 1;
+    return n;
+  }
+
+  function questHint() {
+    const quest = questState();
+    if (!quest.kitten) return countTiles("kitten") ? "Find the kitten" : "Place a kitten";
+    if (quest.bread === "need") return countTiles("bakery") ? "Visit the bakery" : "Place a bakery";
+    if (quest.bread === "have") return countTiles("house") ? "Bring the bread home" : "Place a house";
+    const goal = Math.min(3, countTiles("flowers"));
+    if (!goal) return "Place some flowers";
+    if (quest.flowers.length < goal) return "Pick flowers " + quest.flowers.length + "/" + goal;
+    if (!quest.fountain) return countTiles("fountain") ? "Flowers for the fountain" : "Place a fountain";
+    return "All quests done";
+  }
+
+  function refreshQuestHint() {
+    const hint = document.getElementById("quest-hint");
+    if (hint) hint.textContent = questHint();
+  }
+
+  function stickerSvg(id) {
+    if (id === "kitten") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#ffe1ec"/><circle cx="24" cy="34" r="8" fill="#e8a87c"/><circle cx="40" cy="34" r="8" fill="#e8a87c"/><path d="M18 28 L22 18 L28 28 M36 28 L40 18 L46 28" fill="#e8a87c"/></svg>';
+    if (id === "bread") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff1d6"/><ellipse cx="32" cy="34" rx="16" ry="10" fill="#e0b15a"/><path d="M20 34 H44" stroke="#c4844a" stroke-width="2"/></svg>';
+    return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
+  }
+
+  function badgeRow() {
+    const badges = Store.data.badges || [];
+    if (!badges.length) return "";
+    return '<div class="badge-row">' + badges.map(function (id) { return stickerSvg(id); }).join("") + "</div>";
+  }
+
+  function openSticker(id) {
+    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker" };
+    showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>' + titles[id] + "</h2>" +
+      stickerSvg(id) + '<p class="modal-lead">You did it.</p><div class="row"><button type="button" class="btn primary" id="close-sticker">Close</button></div></div>', "sticker", true);
+    document.getElementById("close-sticker").onclick = hideModal;
+    Sfx.chime();
+  }
+
+  function openQuests() {
+    const quest = questState();
+    const goal = Math.min(3, countTiles("flowers"));
+    const rows = [
+      ["Find the kitten", quest.kitten],
+      ["Deliver the bread", quest.bread === "done"],
+      ["Flowers for the fountain", quest.fountain]
+    ];
+    const body = rows.map(function (row) {
+      return '<div class="quest-row"><span>' + row[0] + "</span><b>" + (row[1] ? "Done" : "Go") + "</b></div>";
+    }).join("");
+    const extra = quest.bread === "have" ? "<p class=\"modal-lead\">You are carrying bread.</p>" : "";
+    const flowerNote = goal ? "<p class=\"modal-lead\">Flowers " + quest.flowers.length + " of " + goal + ".</p>" : "";
+    showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>Quests</h2>' + body + extra + flowerNote +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn primary" id="close-quests">Close</button></div></div>', "quests", true);
+    document.getElementById("close-quests").onclick = hideModal;
+  }
+
+  function noteQuest(c, r, id) {
+    const quest = questState();
+    if (id === "kitten" && !quest.kitten) {
+      quest.kitten = true;
+      Store.persist();
+      refreshQuestHint();
+      if (Store.awardBadge("kitten")) openSticker("kitten");
+      return true;
+    }
+    if (id === "bakery" && quest.bread === "need") {
+      quest.bread = "have";
+      Store.persist();
+      refreshQuestHint();
+      toast("Bread for a friend");
+      Sfx.pop();
+      return false;
+    }
+    if (id === "house" && quest.bread === "have") {
+      quest.bread = "done";
+      Store.persist();
+      refreshQuestHint();
+      if (Store.awardBadge("bread")) openSticker("bread");
+      return true;
+    }
+    if (id === "flowers") {
+      const key = c + "," + r;
+      const goal = Math.min(3, countTiles("flowers"));
+      if (goal && quest.flowers.indexOf(key) === -1 && quest.flowers.length < goal) {
+        quest.flowers.push(key);
+        Store.persist();
+        refreshQuestHint();
+        toast("Flower " + quest.flowers.length + " of " + goal);
+        Sfx.pop();
+      }
+      return false;
+    }
+    if (id === "fountain" && !quest.fountain) {
+      const goal = Math.min(3, countTiles("flowers"));
+      if (goal && quest.flowers.length >= goal) {
+        quest.fountain = true;
+        Store.persist();
+        refreshQuestHint();
+        if (Store.awardBadge("flowers")) openSticker("flowers");
+        return true;
+      }
+    }
+    return false;
   }
 
   function delightPet() {
@@ -917,7 +1042,7 @@
       helpStep("a", "dress", "Design", "Tap a look. Give her a name.") +
       helpStep("b", "save", "Save", "Keep her on this device.") +
       helpStep("c", "castle", "Build", "Tap a piece. Tap the map. Try a bigger size or a new theme.") +
-      helpStep("d", "walk", "Explore", "Tap the ground, the arrows, or the keyboard.") +
+      helpStep("d", "walk", "Explore", "Walk around. Quests give a sticker.") +
       '</div><button type="button" class="btn primary" id="help-go">Let\'s go</button></div>', "help", true);
     document.getElementById("help-go").onclick = hideModal;
   }
@@ -1011,6 +1136,7 @@
       Store.data.kingdom.rows = tpl.rows;
       Store.data.kingdom.theme = tpl.theme;
       Store.data.kingdom.name = tpl.label;
+      Store.data.kingdom.quest = Store.blankQuest();
       Realm.use(Store.data.kingdom);
       Store.persist();
       show("build");
@@ -1082,6 +1208,7 @@
     if (act === "go-design") { Sfx.tap(); show("design"); return; }
     if (act === "go-build") { Sfx.tap(); show("build"); return; }
     if (act === "go-explore") { Sfx.tap(); show("explore"); return; }
+    if (act === "quests") { openQuests(); Sfx.tap(); return; }
     if (act === "tab") {
       designTab = btn.dataset.id;
       document.querySelectorAll(".tab").forEach(function (tab) {
@@ -1224,6 +1351,7 @@
         pushBuildUndo();
         const next = Realm.resize(Store.data.kingdom, nextCols, nextRows);
         next.name = Store.data.kingdom.name;
+        next.quest = Store.data.kingdom.quest || Store.blankQuest();
         Store.data.kingdom = next;
         Realm.use(next);
         Store.persist();
@@ -1287,6 +1415,7 @@
         pushBuildUndo();
         const next = Realm.pack(item);
         next.name = item.name;
+        next.quest = item.quest || Store.blankQuest();
         Store.data.kingdom = next;
         Realm.use(next);
         Store.persist();

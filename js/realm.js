@@ -145,7 +145,7 @@
     "qTWWWWGWWWWWWWWT..",
     "ooooooppoooo.r.oo.",
     "oqq..ppo..c.y..qoo",
-    "oooooooooooooooooo",
+    "oooooooFoooooooooo",
     ".h.ooo.k.oooo.m..o",
     "oooIIIIooooooooooo",
     "qqooooooooooooooqq"
@@ -155,7 +155,7 @@
     "jj..zzzzzzzzzz..jj",
     "j.zzzzzzzzzzzzzz.j",
     "zzzzsszzzzFzzzzzzz",
-    "zzzzzzzzppzzzzzz.e",
+    "zzfzfzzzppfzzzzz.e",
     "OOOOObOOOOObOOOOOO",
     "OOOOObOOOOObOOOOOO",
     "zzzzppzzzzzz..d..z",

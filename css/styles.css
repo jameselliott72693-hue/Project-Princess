@@ -402,6 +402,31 @@ main {
 
 .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 
+.quest-hint {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.quest-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  font-size: 1.15rem;
+  border-bottom: 2px solid var(--line);
+}
+
+.badge-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.sticker { width: 72px; height: 72px; }
+
 .choice-row {
   display: flex;
   flex-wrap: wrap;
