@@ -28,6 +28,8 @@ The pages use big buttons, short labels, and a map you can place or slide. On a 
 
 **Explore** — from Design, tap **Walk**. From Build, tap **Explore**. Move with the arrow buttons, the arrow keys, WASD, or a tap on open ground. On a wide or grand map the view follows her. Her chosen pet walks along behind her and perks up at fountains, flowers, and animals. She will not cross walls, sea, or water. Bridges and the castle gate are fine. A fountain sparkles, animals react, and the gate, throne, houses, bakery, and market open a simple room.
 
+**Quests** — three gentle jobs: find the kitten, carry bread from the bakery to a house, and pick flowers for the fountain. A short hint sits above the map. Each finished job gives a sticker. Stickers stay on this device. If a kingdom is missing a piece, the hint asks you to place one.
+
 **Sound** in the header can be muted. That choice is remembered on this device. **Help** opens a short how-to.
 
 Saves stay in this browser only (`localStorage`). Clearing site data removes them. There is no account and no upload.
@@ -42,7 +44,7 @@ The rounded letters are [Fredoka](https://github.com/hafontia/Fredoka-One) by th
 
 ## Roadmap
 
-- Stories and short quests in the kingdom
+- Stories and short quests in the kingdom (three starter quests are in)
 - More themes, such as a gentle night festival (winter and seaside are in)
 - Sharing a princess or a kingdom as a file or a code
 - Printable coloring pages from a portrait or a map

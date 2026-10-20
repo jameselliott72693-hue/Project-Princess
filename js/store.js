@@ -18,6 +18,33 @@
     }
   }
 
+  function blankQuest() {
+    return { kitten: false, bread: "need", flowers: [], fountain: false };
+  }
+
+  function sanitizeQuest(raw) {
+    const quest = raw && typeof raw === "object" ? raw : {};
+    const flowers = Array.isArray(quest.flowers) ? quest.flowers.filter(function (item) {
+      return typeof item === "string";
+    }).slice(0, 12) : [];
+    return {
+      kitten: !!quest.kitten,
+      bread: quest.bread === "have" || quest.bread === "done" ? quest.bread : "need",
+      flowers: flowers,
+      fountain: !!quest.fountain
+    };
+  }
+
+  function sanitizeBadges(list) {
+    const known = { kitten: 1, bread: 1, flowers: 1 };
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    list.forEach(function (id) {
+      if (known[id] && out.indexOf(id) === -1) out.push(id);
+    });
+    return out;
+  }
+
   function freshKingdom() {
     const castle = root.Realm.template("castle");
     return {
@@ -25,13 +52,15 @@
       cells: castle.cells.slice(),
       cols: castle.cols,
       rows: castle.rows,
-      theme: castle.theme
+      theme: castle.theme,
+      quest: blankQuest()
     };
   }
 
   function kingdomFrom(raw) {
     const packed = root.Realm.pack(raw || {});
     packed.name = root.Paint.cleanName(raw && raw.name) || "Little Castle";
+    packed.quest = sanitizeQuest(raw && raw.quest);
     return packed;
   }
 
@@ -43,7 +72,8 @@
       princess: root.Princess.normalize(null),
       savedPrincesses: [],
       kingdom: freshKingdom(),
-      savedKingdoms: []
+      savedKingdoms: [],
+      badges: []
     };
   }
 
@@ -68,6 +98,7 @@
         cols: packed.cols,
         rows: packed.rows,
         theme: packed.theme,
+        quest: packed.quest,
         savedAt: item && item.savedAt ? Number(item.savedAt) : Date.now()
       };
     });
@@ -95,6 +126,7 @@
         base.kingdom = kingdomFrom(parsed.kingdom);
       }
       base.savedKingdoms = sanitizeKingdomList(parsed.savedKingdoms);
+      base.badges = sanitizeBadges(parsed.badges);
       this.data = base;
       return this.data;
     },
@@ -149,10 +181,19 @@
         cols: packed.cols,
         rows: packed.rows,
         theme: packed.theme,
+        quest: packed.quest,
         savedAt: Date.now()
       });
       this.persist();
       return { ok: true };
+    },
+    blankQuest: blankQuest,
+    awardBadge: function (id) {
+      const badges = sanitizeBadges(this.data.badges.concat([id]));
+      const freshBadge = badges.length !== this.data.badges.length;
+      this.data.badges = badges;
+      this.persist();
+      return freshBadge;
     },
     deleteKingdom: function (id) {
       this.data.savedKingdoms = this.data.savedKingdoms.filter(function (item) {
