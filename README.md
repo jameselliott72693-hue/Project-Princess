@@ -30,6 +30,8 @@ The pages use big buttons, short labels, and a map you can place or slide. On a 
 
 **Quests** — three gentle jobs: find the kitten, carry bread from the bakery to a house, and pick flowers for the fountain. A short hint sits above the map. Each finished job gives a sticker. Stickers stay on this device. If a kingdom is missing a piece, the hint asks you to place one.
 
+**Color** makes a black-and-white page of the princess or the kingdom. **Print** sends it to the printer. **Save** downloads it. **Share** shows a link for that princess or kingdom. Opening the link on this same site loads it in the browser. Nothing is uploaded.
+
 **Sound** in the header can be muted. That choice is remembered on this device. **Help** opens a short how-to.
 
 Saves stay in this browser only (`localStorage`). Clearing site data removes them. There is no account and no upload.
@@ -46,8 +48,8 @@ The rounded letters are [Fredoka](https://github.com/hafontia/Fredoka-One) by th
 
 - Stories and short quests in the kingdom (three starter quests are in)
 - More themes, such as a gentle night festival (winter and seaside are in)
-- Sharing a princess or a kingdom as a file or a code
-- Printable coloring pages from a portrait or a map
+- Sharing a princess or a kingdom as a file or a code (a link is in)
+- Printable coloring pages from a portrait or a map (black-and-white pages are in)
 - Rooms you can walk inside, not only peek into
 - Pets that follow along the path (done)
 - More languages, with the same big icons

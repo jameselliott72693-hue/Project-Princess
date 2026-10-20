@@ -427,6 +427,13 @@ main {
 
 .sticker { width: 72px; height: 72px; }
 
+.color-preview {
+  width: 100%;
+  height: auto;
+  background: white;
+  border-radius: 16px;
+}
+
 .choice-row {
   display: flex;
   flex-wrap: wrap;
@@ -637,6 +644,22 @@ canvas.board.slide-mode { touch-action: pan-x pan-y; }
 @media (max-width: 420px) {
   .btn.tiny span { font-size: 0.92rem; }
   .topbar { padding: 8px; gap: 6px; }
+}
+
+.print-sheet { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-sheet, .print-sheet * { visibility: visible; }
+  .print-sheet {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+  }
+  .print-sheet img { width: 100%; height: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
