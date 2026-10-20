@@ -18,15 +18,31 @@
     }
   }
 
+  function freshKingdom() {
+    const castle = root.Realm.template("castle");
+    return {
+      name: "Little Castle",
+      cells: castle.cells.slice(),
+      cols: castle.cols,
+      rows: castle.rows,
+      theme: castle.theme
+    };
+  }
+
+  function kingdomFrom(raw) {
+    const packed = root.Realm.pack(raw || {});
+    packed.name = root.Paint.cleanName(raw && raw.name) || "Little Castle";
+    return packed;
+  }
+
   function fresh() {
-    const castle = root.Realm.templateCells("castle");
     return {
       v: 1,
       mute: false,
       helpSeen: false,
       princess: root.Princess.normalize(null),
       savedPrincesses: [],
-      kingdom: { name: "Little Castle", cells: castle },
+      kingdom: freshKingdom(),
       savedKingdoms: []
     };
   }
@@ -44,10 +60,14 @@
   function sanitizeKingdomList(list) {
     if (!Array.isArray(list)) return [];
     return list.slice(0, 12).map(function (item) {
+      const packed = kingdomFrom(item);
       return {
         id: item && item.id ? String(item.id) : String(Date.now()),
-        name: root.Paint.cleanName(item && item.name) || "My kingdom",
-        cells: root.Realm.normalize(item && item.cells),
+        name: packed.name,
+        cells: packed.cells,
+        cols: packed.cols,
+        rows: packed.rows,
+        theme: packed.theme,
         savedAt: item && item.savedAt ? Number(item.savedAt) : Date.now()
       };
     });
@@ -72,10 +92,7 @@
       base.princess = root.Princess.normalize(parsed.princess);
       base.savedPrincesses = sanitizePrincessList(parsed.savedPrincesses);
       if (parsed.kingdom && typeof parsed.kingdom === "object") {
-        base.kingdom = {
-          name: root.Paint.cleanName(parsed.kingdom.name) || "Little Castle",
-          cells: root.Realm.normalize(parsed.kingdom.cells)
-        };
+        base.kingdom = kingdomFrom(parsed.kingdom);
       }
       base.savedKingdoms = sanitizeKingdomList(parsed.savedKingdoms);
       this.data = base;
@@ -113,18 +130,25 @@
       this.persist();
     },
     saveKingdom: function (kingdom) {
-      const name = root.Paint.cleanName(kingdom.name) || "My kingdom";
-      const cells = root.Realm.normalize(kingdom.cells);
-      const sig = name + "|" + cells.join(",");
+      const packed = kingdomFrom(kingdom);
+      const name = root.Paint.cleanName(kingdom && kingdom.name) || "My kingdom";
+      const sig = name + "|" + packed.theme + "|" + packed.cols + "x" + packed.rows + "|" + packed.cells.join(",");
       const list = this.data.savedKingdoms;
-      if (list.some(function (item) { return (item.name + "|" + item.cells.join(",")) === sig; })) {
+      if (list.some(function (item) {
+        const itemPacked = kingdomFrom(item);
+        const itemSig = itemPacked.name + "|" + itemPacked.theme + "|" + itemPacked.cols + "x" + itemPacked.rows + "|" + itemPacked.cells.join(",");
+        return itemSig === sig;
+      })) {
         return { ok: false, reason: "same" };
       }
       if (list.length >= 12) return { ok: false, reason: "full" };
       list.unshift({
         id: Math.random().toString(36).slice(2, 8) + Date.now().toString(36),
         name: name,
-        cells: cells,
+        cells: packed.cells,
+        cols: packed.cols,
+        rows: packed.rows,
+        theme: packed.theme,
         savedAt: Date.now()
       });
       this.persist();
