@@ -1071,36 +1071,110 @@ function drawGate(ctx, x, y, cells, c, r, open) {
   }
 
   function miniHair(ctx, style) {
-    if (style === "coily" || style === "curly") {
+    function cap(r) {
       ctx.beginPath();
-      ctx.arc(0, -30, 12, 0, Math.PI * 2);
+      ctx.arc(0, -30, r, Math.PI, 0);
+      ctx.fill();
+    }
+    if (style === "coily") {
+      ctx.beginPath();
+      ctx.arc(0, -30, 13, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
-    if (style === "buns" || style === "bun") {
+    if (style === "curly") {
       ctx.beginPath();
-      ctx.arc(-7, -38, 4.5, 0, Math.PI * 2);
-      ctx.arc(7, -38, 4.5, 0, Math.PI * 2);
+      ctx.arc(0, -29, 11, 0, Math.PI * 2);
+      ctx.arc(-9, -20, 4, 0, Math.PI * 2);
+      ctx.arc(9, -20, 4, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
-    if (style === "pixie" || style === "bob" || style === "halo") {
+    if (style === "bun" || style === "halfup") {
+      cap(8);
       ctx.beginPath();
-      ctx.arc(0, -30, 9, Math.PI, Math.PI * 2);
+      ctx.arc(0, style === "halfup" ? -40 : -41, 5, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
-    if (style === "braids" || style === "twists" || style === "sidebraid") {
-      ctx.fillRect(-8, -36, 16, 8);
-      ctx.fillRect(-7, -22, 3, 14);
-      ctx.fillRect(4, -22, 3, 14);
+    if (style === "buns") {
+      cap(8);
+      ctx.beginPath();
+      ctx.arc(-8, -36, 4.2, 0, Math.PI * 2);
+      ctx.arc(8, -36, 4.2, 0, Math.PI * 2);
+      ctx.fill();
       return;
     }
-    ctx.beginPath();
-    ctx.arc(0, -30, 9, Math.PI, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(-8, -30, 4, 16);
-    ctx.fillRect(4, -30, 4, 16);
+    if (style === "pigtails") {
+      cap(8);
+      ctx.beginPath();
+      ctx.arc(-11, -14, 4, 0, Math.PI * 2);
+      ctx.arc(11, -14, 4, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "pixie") {
+      cap(8);
+      return;
+    }
+    if (style === "bob") {
+      ctx.beginPath();
+      ctx.arc(0, -26, 10, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "halo") {
+      cap(7);
+      ctx.beginPath();
+      ctx.ellipse(0, -34, 9, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "sidebraid") {
+      cap(8);
+      ctx.fillRect(11, -16, 4, 18);
+      return;
+    }
+    if (style === "braids") {
+      cap(8);
+      ctx.fillRect(-13, -16, 3, 16);
+      ctx.fillRect(10, -16, 3, 16);
+      return;
+    }
+    if (style === "twists") {
+      cap(8);
+      ctx.fillRect(-13, -14, 2, 12);
+      ctx.fillRect(-9, -14, 2, 14);
+      ctx.fillRect(7, -14, 2, 13);
+      ctx.fillRect(11, -14, 2, 11);
+      return;
+    }
+    if (style === "pony") {
+      cap(8);
+      ctx.beginPath();
+      ctx.moveTo(6, -36);
+      ctx.quadraticCurveTo(18, -24, 14, -6);
+      ctx.lineTo(10, -8);
+      ctx.quadraticCurveTo(13, -22, 3, -34);
+      ctx.fill();
+      return;
+    }
+    cap(8);
+    if (style === "wavy") {
+      ctx.beginPath();
+      ctx.moveTo(-8, -28);
+      ctx.quadraticCurveTo(-12, -16, -7, -6);
+      ctx.lineTo(-4, -8);
+      ctx.quadraticCurveTo(-8, -16, -5, -28);
+      ctx.moveTo(8, -28);
+      ctx.quadraticCurveTo(12, -16, 7, -6);
+      ctx.lineTo(4, -8);
+      ctx.quadraticCurveTo(8, -16, 5, -28);
+      ctx.fill();
+      return;
+    }
+    ctx.fillRect(-8, -30, 3.5, 16);
+    ctx.fillRect(5, -30, 3.5, 16);
   }
 
   function drawPet(ctx, pose, princess) {
