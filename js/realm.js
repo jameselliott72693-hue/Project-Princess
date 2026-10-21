@@ -1132,21 +1132,21 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     }
     if (style === "sidebraid") {
       cap(8);
-      ctx.fillRect(8, -24, 4, 18);
+      ctx.fillRect(11, -16, 4, 18);
       return;
     }
     if (style === "braids") {
       cap(8);
-      ctx.fillRect(-10, -24, 3, 16);
-      ctx.fillRect(7, -24, 3, 16);
+      ctx.fillRect(-13, -16, 3, 16);
+      ctx.fillRect(10, -16, 3, 16);
       return;
     }
     if (style === "twists") {
       cap(8);
-      ctx.fillRect(-11, -22, 2, 9);
-      ctx.fillRect(-7, -22, 2, 12);
-      ctx.fillRect(5, -22, 2, 11);
-      ctx.fillRect(9, -22, 2, 8);
+      ctx.fillRect(-13, -14, 2, 12);
+      ctx.fillRect(-9, -14, 2, 14);
+      ctx.fillRect(7, -14, 2, 13);
+      ctx.fillRect(11, -14, 2, 11);
       return;
     }
     if (style === "pony") {

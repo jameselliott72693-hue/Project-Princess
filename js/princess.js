@@ -337,33 +337,33 @@
   }
 
   function bangsSoft(fill) {
-    return '<path d="M154 164 C160 126 182 108 200 112 C218 108 240 126 246 164 C228 148 214 156 200 146 C186 156 172 148 154 164 Z" fill="' + fill + '"/>';
+    return '<path d="M156 150 C162 124 182 108 200 112 C218 108 238 124 244 150 C228 140 216 146 200 140 C184 146 172 140 156 150 Z" fill="' + fill + '"/>';
   }
 
   function bangsFull(fill) {
-    return '<path d="M146 168 C148 124 172 106 200 106 C228 106 252 124 254 168 C236 150 218 160 200 148 C182 160 164 150 146 168 Z" fill="' + fill + '"/>';
+    return '<path d="M150 152 C152 122 174 106 200 106 C226 106 248 122 250 152 C234 140 218 148 200 140 C182 148 166 140 150 152 Z" fill="' + fill + '"/>';
   }
 
   function bangsSwept(fill) {
-    return '<path d="M148 156 C162 118 198 104 238 126 C254 136 252 160 234 166 C210 150 184 160 164 154 C152 166 146 164 148 156 Z" fill="' + fill + '"/>';
+    return '<path d="M150 148 C164 118 198 104 236 124 C250 132 248 150 232 152 C210 140 186 148 166 144 C154 152 148 150 150 148 Z" fill="' + fill + '"/>';
   }
 
   function bangsShort(fill) {
-    return '<path d="M160 152 C168 124 184 112 200 114 C216 112 232 124 240 152 C222 140 212 148 200 138 C188 148 178 140 160 152 Z" fill="' + fill + '"/>';
+    return '<path d="M162 146 C170 122 184 110 200 112 C216 110 230 122 238 146 C222 136 212 142 200 134 C188 142 178 136 162 146 Z" fill="' + fill + '"/>';
   }
 
   function lockStraight(side, fill) {
     if (side < 0) {
-      return '<path d="M148 156 C134 188 122 232 126 292 C128 322 146 332 158 312 C168 274 160 214 166 174 C160 162 152 156 148 156 Z" fill="' + fill + '"/>';
+      return '<path d="M124 178 C112 210 102 254 110 314 C114 338 128 344 136 324 C142 294 130 234 128 202 C124 184 122 178 124 178 Z" fill="' + fill + '"/>';
     }
-    return '<path d="M252 156 C266 188 278 232 274 292 C272 322 254 332 242 312 C232 274 240 214 234 174 C240 162 248 156 252 156 Z" fill="' + fill + '"/>';
+    return '<path d="M276 178 C288 210 298 254 290 314 C286 338 272 344 264 324 C258 294 270 234 272 202 C276 184 278 178 276 178 Z" fill="' + fill + '"/>';
   }
 
   function lockWavy(side, fill) {
     if (side < 0) {
-      return '<path d="M146 158 C126 194 158 222 134 270 C114 312 142 340 128 378 C122 400 148 392 154 364 C162 326 136 304 152 258 C164 222 138 198 160 172 C154 162 148 158 146 158 Z" fill="' + fill + '"/>';
+      return '<path d="M122 180 C104 212 124 242 106 288 C92 328 116 356 108 388 C102 404 124 396 130 370 C136 338 114 316 126 274 C134 240 112 210 128 186 C122 174 120 176 122 180 Z" fill="' + fill + '"/>';
     }
-    return '<path d="M254 158 C274 194 242 222 266 270 C286 312 258 340 272 378 C278 400 252 392 246 364 C238 326 264 304 248 258 C236 222 262 198 240 172 C246 162 252 158 254 158 Z" fill="' + fill + '"/>';
+    return '<path d="M278 180 C296 212 276 242 294 288 C308 328 284 356 292 388 C298 404 276 396 270 370 C264 338 286 316 274 274 C266 240 288 210 272 186 C278 174 280 176 278 180 Z" fill="' + fill + '"/>';
   }
 
   function longSheet(fill) {
@@ -501,15 +501,17 @@
         );
       case "braids":
         return layersOf(
-          cap,
-          neatBraid(156, 188, 142, 430, -16, ink, tie) + neatBraid(244, 188, 258, 430, 16, ink, tie),
+          cap +
+            '<path d="M148 166 Q132 196 120 226" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>' +
+            '<path d="M252 166 Q268 196 280 226" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>',
+          neatBraid(120, 222, 108, 428, -12, ink, tie) + neatBraid(280, 222, 292, 428, 12, ink, tie),
           bangsSoft(ink.c),
           ink.defs
         );
       case "sidebraid":
         return layersOf(
-          cap + lockStraight(-1, ink.c),
-          neatBraid(214, 176, 292, 392, 28, ink, tie),
+          cap + '<path d="M232 148 Q266 172 286 212" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>',
+          neatBraid(286, 208, 306, 404, 14, ink, tie),
           bangsSwept(ink.c),
           ink.defs
         );
@@ -555,20 +557,21 @@
         );
       case "pony":
         return layersOf(
-          cap,
-          '<path d="M206 114 C240 122 294 176 276 248 C264 308 292 342 270 374 C256 392 242 364 250 322 C258 268 230 214 218 164 C232 138 250 122 224 112 C214 106 206 108 206 114 Z" fill="' + ink.fill + '"/>' +
-            hairTie(220, 122, tie),
+          cap + '<path d="M216 108 C250 96 278 118 280 150" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>',
+          '<path d="M280 146 C306 164 326 216 308 278 C296 330 322 358 300 386 C284 404 270 376 280 338 C292 288 278 216 278 170 C284 154 288 146 280 146 Z" fill="' + ink.fill + '"/>' +
+            hairTie(288, 140, tie),
           bangsShort(ink.c),
           ink.defs
         );
       case "twists": {
-        let mid = "";
-        for (let i = 0; i < 7; i++) {
-          const x = 154 + i * 15;
-          const extra = i % 2 ? 18 : 0;
-          mid += twistRibbon(x, 196, 372 + extra, ink, i * 0.7);
-        }
-        return layersOf(cap, mid, bangsShort(ink.c), ink.defs);
+        let back = cap;
+        [108, 126, 144].forEach(function (x, i) {
+          back += twistRibbon(x, 184, 352 + (i % 2) * 22, ink, i * 0.8);
+        });
+        [256, 274, 292].forEach(function (x, i) {
+          back += twistRibbon(x, 184, 364 - (i % 2) * 18, ink, i + 1.4);
+        });
+        return layersOf(back, "", bangsShort(ink.c), ink.defs);
       }
       case "halo":
         return layersOf(
@@ -579,10 +582,12 @@
         );
       case "pigtails":
         return layersOf(
-          cap,
-          '<path d="M156 164 C132 184 112 214 116 268 C120 318 108 336 124 328 C146 316 150 276 146 236 C144 206 156 186 168 170 C162 164 158 162 156 164 Z" fill="' + ink.fill + '"/>' +
-            '<path d="M244 164 C268 184 288 214 284 268 C280 318 292 336 276 328 C254 316 250 276 254 236 C256 206 244 186 232 170 C238 164 242 162 244 164 Z" fill="' + ink.fill + '"/>' +
-            hairTie(138, 206, tie) + hairTie(262, 206, tie),
+          cap +
+            '<path d="M150 174 Q130 198 118 228" fill="none" stroke="' + ink.fill + '" stroke-width="14" stroke-linecap="round"/>' +
+            '<path d="M250 174 Q270 198 282 228" fill="none" stroke="' + ink.fill + '" stroke-width="14" stroke-linecap="round"/>',
+          '<path d="M118 224 C96 240 88 282 100 324 C108 350 94 360 116 348 C140 332 136 286 126 254 C120 234 128 224 118 224 Z" fill="' + ink.fill + '"/>' +
+            '<path d="M282 224 C304 240 312 282 300 324 C292 350 306 360 284 348 C260 332 264 286 274 254 C280 234 272 224 282 224 Z" fill="' + ink.fill + '"/>' +
+            hairTie(108, 242, tie) + hairTie(292, 242, tie),
           bangsSoft(ink.c),
           ink.defs
         );
@@ -592,7 +597,7 @@
             '<circle cx="200" cy="86" r="22" fill="' + ink.fill + '"/>' +
             '<path d="M184 78 C190 64 210 64 216 78 C206 70 194 70 184 78 Z" fill="' + ink.l + '"/>' +
             hairTie(200, 104, tie),
-          '<path d="' + capsule(152, 170, 134, 246, 6) + '" fill="' + ink.c + '"/><path d="' + capsule(248, 170, 266, 246, 6) + '" fill="' + ink.c + '"/>',
+          '<path d="' + capsule(122, 210, 112, 270, 5) + '" fill="' + ink.c + '"/><path d="' + capsule(278, 210, 288, 270, 5) + '" fill="' + ink.c + '"/>',
           bangsShort(ink.c),
           ink.defs
         );
@@ -886,15 +891,15 @@
     if (style === "bun") return [232, 58];
     if (style === "buns") return [294, 90];
     if (style === "curly") return [286, 148];
-    if (style === "pony") return [246, 132];
-    if (style === "sidebraid") return [304, 188];
+    if (style === "pony") return [312, 210];
+    if (style === "sidebraid") return [316, 248];
     if (style === "halo") return [272, 108];
-    if (style === "pigtails") return [262, 198];
+    if (style === "pigtails") return [304, 256];
     if (style === "halfup") return [230, 78];
-    if (style === "pixie") return [262, 148];
-    if (style === "braids") return [168, 168];
-    if (style === "twists") return [274, 176];
-    return [270, 158];
+    if (style === "pixie") return [280, 146];
+    if (style === "braids") return [304, 268];
+    if (style === "twists") return [312, 214];
+    return [296, 188];
   }
 
   function hairExtra(p) {
