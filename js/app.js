@@ -38,6 +38,8 @@
   let buildTool = "flowers";
   let buildGroup = "nature";
   let playTab = "garden";
+  let storyPage = 0;
+  let storyVoice = false;
   let buildSliding = false;
   let buildBig = false;
   let exploreSource = "working";
@@ -85,7 +87,7 @@
   }
 
   function updateChrome() {
-    const titles = { home: "Petal Palace", design: "Design", build: "Build", explore: "Explore", play: "Play" };
+    const titles = { home: "Petal Palace", design: "Design", build: "Build", explore: "Explore", story: "Story", play: "Play" };
     document.getElementById("title").textContent = titles[view] || "Petal Palace";
     const homeBtn = document.getElementById("btn-home");
     homeBtn.innerHTML = ico(view === "home" ? "spark" : "home") + "<span>Home</span>";
@@ -96,6 +98,7 @@
     muteBtn.innerHTML = ico(mute ? "mute" : "sound") + "<span>" + (mute ? "Muted" : "Sound") + "</span>";
     muteBtn.setAttribute("aria-pressed", mute ? "true" : "false");
     muteBtn.setAttribute("aria-label", mute ? "Sound is off" : "Sound is on");
+    document.body.dataset.season = Season.current();
   }
 
   function stopLoop() {
@@ -117,6 +120,7 @@
   }
 
   function show(next) {
+    if (view === "story" && next !== "story") Story.stop();
     view = next;
     stopLoop();
     painting = false;
@@ -126,6 +130,7 @@
     afterMove = null;
     if (next === "home") renderHome();
     if (next === "play") renderPlay();
+    if (next === "story") renderStory();
     if (next === "design") renderDesigner();
     if (next === "build" || next === "explore") Realm.use(Store.data.kingdom);
     if (next === "build") {
@@ -196,13 +201,120 @@
     });
   }
 
+  function renderStory() {
+    const page = Story.page(storyPage, working);
+    const last = Story.count() - 1;
+    main.innerHTML = '<section class="book"><div class="book-stage" id="book-stage">' + Story.svg(storyPage, working) + "</div>" +
+      '<div class="book-copy"><h2 id="book-title">' + Paint.esc(page.title) + '</h2><p id="book-text">' + Paint.esc(page.text) + "</p></div>" +
+      '<div class="book-nav">' +
+      '<button type="button" class="btn" data-act="story-prev"' + (storyPage === 0 ? " disabled" : "") + ">Back</button>" +
+      '<span class="book-count">' + (storyPage + 1) + " of " + Story.count() + "</span>" +
+      '<button type="button" class="btn" data-act="story-next"' + (storyPage === last ? " disabled" : "") + ">Next</button>" +
+      "</div>" +
+      '<div class="book-tools">' +
+      '<button type="button" class="btn' + (storyVoice ? " primary" : "") + '" id="story-read" data-act="story-read" aria-pressed="' + (storyVoice ? "true" : "false") + '">' +
+      (storyVoice ? "Quiet" : "Read") + "</button>" +
+      '<button type="button" class="btn" data-act="story-save">' + ico("picture") + "<span>Save</span></button>" +
+      '<button type="button" class="btn" data-act="story-print">' + ico("save") + "<span>Print</span></button>" +
+      "</div></section>";
+  }
+
+  function storyLine() {
+    const page = Story.page(storyPage, working);
+    return page.title + ". " + page.text;
+  }
+
+  function storySpeak() {
+    if (!storyVoice || Store.data.mute) {
+      Story.stop();
+      return;
+    }
+    if (!Story.speak(storyLine())) toast("This browser has no read-aloud");
+  }
+
+  function turnStory(step) {
+    const next = storyPage + step;
+    if (next < 0 || next >= Story.count()) return;
+    storyPage = next;
+    renderStory();
+    storySpeak();
+  }
+
+  function rasterStory(index, done, fail) {
+    const page = Story.page(index, working);
+    const blob = new Blob([Story.svg(index, working)], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function () {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 1120;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fffaf4";
+      ctx.fillRect(0, 0, 800, 1120);
+      ctx.drawImage(img, 0, 0, 800, 1000);
+      ctx.fillStyle = "#5a3144";
+      ctx.textAlign = "center";
+      ctx.font = '700 36px Fredoka, "Trebuchet MS", sans-serif';
+      ctx.fillText(page.title, 400, 1048);
+      ctx.font = '500 22px Fredoka, "Trebuchet MS", sans-serif';
+      wrapCanvasText(ctx, page.text, 400, 1084, 720, 28);
+      URL.revokeObjectURL(url);
+      done(canvas);
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      fail();
+    };
+    img.src = url;
+  }
+
+  function wrapCanvasText(ctx, text, x, y, width, line) {
+    const words = String(text).split(" ");
+    let row = "";
+    let top = y;
+    words.forEach(function (word) {
+      const trial = row ? row + " " + word : word;
+      if (ctx.measureText(trial).width > width) {
+        ctx.fillText(row, x, top);
+        row = word;
+        top += line;
+      } else row = trial;
+    });
+    if (row) ctx.fillText(row, x, top);
+  }
+
+  function saveStory() {
+    rasterStory(storyPage, function (canvas) {
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = fileBase(Princess.displayName(working)) + "-story-" + (storyPage + 1) + ".png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast("Page saved");
+    }, function () { toast("Picture did not work"); });
+  }
+
+  function printStory() {
+    const pages = [];
+    for (let i = 0; i < Story.count(); i++) {
+      const page = Story.page(i, working);
+      pages.push('<article class="print-page">' + Story.svg(i, working) +
+        "<h2>" + Paint.esc(page.title) + "</h2><p>" + Paint.esc(page.text) + "</p></article>");
+    }
+    document.getElementById("print-sheet").innerHTML = pages.join("");
+    window.print();
+  }
+
   function renderHome() {
     main.innerHTML = '<section class="hero"><div class="hero-castle">' + heroCastle() + '</div><div class="hero-princess">' +
       Princess.svg(working, { thumb: true }) + "</div></section>" +
-      '<h2 class="home-lead">A little kingdom</h2>' + badgeRow() +
+      '<h2 class="home-lead">A little kingdom</h2>' + badgeRow() + seasonBar() +
       '<div class="home-grid">' +
       '<button type="button" class="home-card design" data-act="go-design">' + ico("dress").replace('class="ico"', 'class="ico big-ico"') + "<span>Design</span></button>" +
       '<button type="button" class="home-card build" data-act="go-build">' + ico("castle").replace('class="ico"', 'class="ico big-ico"') + "<span>Build</span></button>" +
+      '<button type="button" class="home-card story" data-act="go-story">' + ico("picture").replace('class="ico"', 'class="ico big-ico"') + "<span>Story</span></button>" +
       '<button type="button" class="home-card play" data-act="go-play">' + ico("spark").replace('class="ico"', 'class="ico big-ico"') + "<span>Play</span></button>" +
       "</div>" +
       '<h3 class="section-label">Princesses</h3>' + savedPrincessCards() +
@@ -225,6 +337,27 @@
 
   function finishPlay(id) {
     if (Store.awardBadge(id)) openSticker(id);
+  }
+
+  function seasonBar() {
+    const picked = Season.choice();
+    const now = Season.current();
+    const buttons = [
+      ["auto", "By date"],
+      ["snow", "Snow festival"],
+      ["spring", "Spring garden"],
+      ["off", "Quiet"]
+    ].map(function (item) {
+      const on = picked === item[0];
+      return '<button type="button" class="btn seg' + (on ? " is-on" : "") + '" data-act="event" data-id="' + item[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' + item[1] + "</button>";
+    }).join("");
+    const badge = now === "snow" ? "snowfest" : now === "spring" ? "spring" : "";
+    const owned = badge && (Store.data.badges || []).indexOf(badge) >= 0;
+    let note = "No festival today. You can still pick one.";
+    if (now === "snow") note = owned ? "Snow festival is here. You have the snow sticker." : "Snow festival is here. Join for a snow sticker.";
+    if (now === "spring") note = owned ? "Spring garden is here. You have the blossom sticker." : "Spring garden is here. Join for a blossom sticker.";
+    const join = badge && !owned ? '<button type="button" class="btn primary" data-act="join-season">Join</button>' : "";
+    return '<div class="season-bar"><p class="season-note">' + note + '</p><div class="choice-row">' + buttons + "</div>" + join + "</div>";
   }
 
   function swatches(colors, key, current) {
@@ -417,7 +550,11 @@
   function renderTools() {
     const box = document.getElementById("tools");
     if (!box) return;
-    const tiles = Realm.TILES.filter(function (tile) { return tile.group === buildGroup; }).slice().sort(function (a, b) {
+    const tiles = Realm.TILES.filter(function (tile) {
+      if (tile.group !== buildGroup) return false;
+      if (tile.event && tile.event !== Season.current()) return false;
+      return true;
+    }).slice().sort(function (a, b) {
       function rank(tile) {
         if (!tile.theme) return 1;
         return tile.theme === Store.data.kingdom.theme ? 0 : 2;
@@ -823,6 +960,8 @@
     if (id === "flowers") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
     if (id === "garden") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><path d="M32 46 V28" stroke="#3e9a6a" stroke-width="3"/><circle cx="32" cy="24" r="6" fill="#f2849a"/><circle cx="24" cy="30" r="5" fill="#f2c14e"/><circle cx="40" cy="30" r="5" fill="#e26d7a"/></svg>';
     if (id === "ball") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff1d6"/><rect x="26" y="16" width="4" height="28" fill="#8d5a34"/><path d="M30 18 H46 L40 28 H30 Z" fill="#e25b7a"/></svg>';
+    if (id === "snowfest") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f4ff"/><path d="M32 14 V50 M18 22 L46 42 M46 22 L18 42" stroke="#7ec8ea" stroke-width="4" stroke-linecap="round"/></svg>';
+    if (id === "spring") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="30" r="6" fill="#f2c14e"/><circle cx="24" cy="36" r="6" fill="#f2849a"/><circle cx="40" cy="36" r="6" fill="#e26d7a"/></svg>';
     return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
   }
 
@@ -833,7 +972,7 @@
   }
 
   function openSticker(id) {
-    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker", garden: "Garden sticker", ball: "Ballroom sticker" };
+    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker", garden: "Garden sticker", ball: "Ballroom sticker", snowfest: "Snow sticker", spring: "Blossom sticker" };
     showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>' + titles[id] + "</h2>" +
       stickerSvg(id) + '<p class="modal-lead">You did it.</p><div class="row"><button type="button" class="btn primary" id="close-sticker">Close</button></div></div>', "sticker", true);
     document.getElementById("close-sticker").onclick = hideModal;
@@ -1071,6 +1210,8 @@
       helpStep("b", "save", "Save", "Keep her on this device.") +
       helpStep("c", "castle", "Build", "Tap a piece. Tap the map. Try a bigger size or a new theme.") +
       helpStep("d", "walk", "Explore", "Walk around. Quests give a sticker.") +
+      helpStep("a", "picture", "Story", "Read a little book about her. Tap Read to hear it.") +
+      helpStep("b", "spark", "Festivals", "Snow festival and Spring garden can be picked by hand.") +
       helpStep("c", "spark", "Play", "Water the garden or decorate the ballroom.") +
       '</div><button type="button" class="btn primary" id="help-go">Let\'s go</button></div>', "help", true);
     document.getElementById("help-go").onclick = hideModal;
@@ -1401,6 +1542,19 @@
       return;
     }
     const act = btn.dataset.act;
+    if (act === "go-story") { Sfx.tap(); show("story"); return; }
+    if (act === "story-prev") { turnStory(-1); Sfx.tap(); return; }
+    if (act === "story-next") { turnStory(1); Sfx.tap(); return; }
+    if (act === "story-read") {
+      storyVoice = !storyVoice;
+      if (storyVoice && Store.data.mute) toast("Sound is off");
+      renderStory();
+      storySpeak();
+      Sfx.tap();
+      return;
+    }
+    if (act === "story-save") { saveStory(); Sfx.pop(); return; }
+    if (act === "story-print") { printStory(); Sfx.tap(); return; }
     if (act === "go-design") { Sfx.tap(); show("design"); return; }
     if (act === "go-build") { Sfx.tap(); show("build"); return; }
     if (act === "go-explore") { Sfx.tap(); show("explore"); return; }
@@ -1434,6 +1588,23 @@
       renderPlay();
       if (ball.every(function (kind) { return kind; })) finishPlay("ball");
       Sfx.pop();
+      return;
+    }
+    if (act === "event") {
+      Store.data.event = btn.dataset.id;
+      Store.persist();
+      renderHome();
+      updateChrome();
+      Sfx.tap();
+      return;
+    }
+    if (act === "join-season") {
+      const now = Season.current();
+      const id = now === "snow" ? "snowfest" : "spring";
+      if (Store.awardBadge(id)) openSticker(id);
+      renderHome();
+      updateChrome();
+      Sfx.chime();
       return;
     }
     if (act === "quests") { openQuests(); Sfx.tap(); return; }
@@ -1779,6 +1950,8 @@
       const muted = !Store.data.mute;
       Store.setMute(muted);
       Sfx.setMuted(muted);
+      if (muted) Story.stop();
+      else if (view === "story" && storyVoice) storySpeak();
       if (!muted) Sfx.unlock();
       updateChrome();
     });
@@ -1837,6 +2010,11 @@
         if (view === "build") { event.preventDefault(); undoBuild(); }
         return;
       }
+      const tagName = event.target && event.target.tagName;
+      if (view === "story" && modal.hidden && tagName !== "INPUT" && tagName !== "TEXTAREA") {
+        if (event.key === "ArrowLeft") { event.preventDefault(); turnStory(-1); return; }
+        if (event.key === "ArrowRight") { event.preventDefault(); turnStory(1); return; }
+      }
       const dir = KEY_DIR[event.code] || KEY_DIR[event.key];
       if (!dir || view !== "explore" || !modal.hidden) return;
       const tag = event.target && event.target.tagName;
@@ -1852,8 +2030,10 @@
       if (dir) setDir(dir, false);
     });
     document.addEventListener("visibilitychange", function () {
-      if (document.hidden) stopLoop();
-      else if (view === "build" || view === "explore") startLoop();
+      if (document.hidden) {
+        stopLoop();
+        Story.stop();
+      } else if (view === "build" || view === "explore") startLoop();
     });
     const shared = readShare();
     show(shared === "k" ? "build" : shared === "p" ? "design" : "home");

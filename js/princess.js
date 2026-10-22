@@ -57,7 +57,11 @@
     { id: "garden", label: "Garden", color: "#7bc67e", accent: "#fff6ea", length: "medium", sleeve: "puff" },
     { id: "royal", label: "Royal robe", color: "#8e3d5b", accent: "#f2c14e", length: "long", sleeve: "wide" },
     { id: "sailor", label: "Sailor", color: "#3e7cb1", accent: "#fff6ea", length: "medium", sleeve: "short" },
-    { id: "spark", label: "Spark suit", color: "#f29a4a", accent: "#5c6bc0", length: "short", sleeve: "fitted" }
+    { id: "spark", label: "Spark suit", color: "#f29a4a", accent: "#5c6bc0", length: "short", sleeve: "fitted" },
+    { id: "blossom", label: "Blossom", color: "#f2849a", accent: "#f2c14e", length: "long", sleeve: "puff" },
+    { id: "frost", label: "Frost", color: "#d7eef8", accent: "#7ec8ea", length: "long", sleeve: "long" },
+    { id: "night", label: "Pajamas", color: "#5c6bc0", accent: "#f2c14e", length: "short", sleeve: "fitted" },
+    { id: "festival", label: "Festival", color: "#e25b7a", accent: "#f2c14e", length: "long", sleeve: "puff" }
   ];
   const SHOES = [
     { id: "slippers", label: "Slippers" },
@@ -78,7 +82,9 @@
     { id: "none", label: "None" },
     { id: "cat", label: "Cat" },
     { id: "pup", label: "Pup" },
-    { id: "dragon", label: "Dragon" }
+    { id: "dragon", label: "Dragon" },
+    { id: "bird", label: "Bird" },
+    { id: "bunny", label: "Bunny" }
   ];
   const EXTRAS = [
     { id: "none", label: "None" },
@@ -208,7 +214,7 @@
       necklace: Math.random() < 0.5,
       earrings: Math.random() < 0.4,
       gemColor: pick(GEM_COLORS),
-      pet: Math.random() < 0.72 ? pick(["cat", "pup", "dragon"]) : "none",
+      pet: Math.random() < 0.72 ? pick(["cat", "pup", "dragon", "bird", "bunny"]) : "none",
       petColor: pick(PET_COLORS)
     });
   }
@@ -641,10 +647,51 @@
       sparkle(200, 304, 11, a);
   }
 
+  function drawBlossomDress(p) {
+    const c = p.outfitColor;
+    const a = p.outfitAccent;
+    const l = Paint.lighten(c, 0.22);
+    return '<path d="M168 268 Q200 300 232 268 L246 348 H154 Z" fill="' + c + '"/>' +
+      '<ellipse cx="152" cy="430" rx="40" ry="68" fill="' + c + '"/>' +
+      '<ellipse cx="200" cy="448" rx="46" ry="76" fill="' + l + '"/>' +
+      '<ellipse cx="248" cy="430" rx="40" ry="68" fill="' + c + '"/>' +
+      '<circle cx="200" cy="312" r="8" fill="' + a + '"/>' +
+      '<circle cx="164" cy="400" r="7" fill="' + a + '"/><circle cx="236" cy="392" r="7" fill="' + a + '"/>';
+  }
+
+  function drawFrost(p) {
+    const c = p.outfitColor;
+    const a = p.outfitAccent;
+    return '<path d="M150 280 C120 360 112 450 130 506 H270 C288 450 280 360 250 280 Q200 304 150 280 Z" fill="' + c + '"/>' +
+      '<path d="M176 304 L200 358 L224 304 L200 290 Z" fill="' + a + '"/>' +
+      sparkle(168, 400, 10, a) + sparkle(232, 420, 10, a) + sparkle(200, 450, 12, a) +
+      '<path d="M158 478 H242" stroke="' + a + '" stroke-width="6" stroke-linecap="round"/>';
+  }
+
+  function drawNight(p) {
+    const c = p.outfitColor;
+    const a = p.outfitAccent;
+    return '<path d="' + capsule(168, 360, 160, 470, 16) + '" fill="' + c + '"/><path d="' + capsule(232, 360, 240, 470, 16) + '" fill="' + c + '"/>' +
+      '<path d="M158 258 H242 L234 368 H166 Z" fill="' + c + '"/>' +
+      '<path d="M158 304 H242" stroke="' + a + '" stroke-width="8" stroke-linecap="round"/>' +
+      sparkle(184, 278, 8, a) + sparkle(216, 278, 8, a);
+  }
+
+  function drawFestival(p) {
+    const c = p.outfitColor;
+    const a = p.outfitAccent;
+    return '<path d="M146 332 C118 392 108 452 120 502 H280 C292 452 282 392 254 332 Q200 354 146 332 Z" fill="' + c + '"/>' +
+      '<path d="M166 266 Q200 298 234 266 L242 340 H158 Z" fill="' + c + '"/>' +
+      '<path d="M148 346 H252" stroke="' + a + '" stroke-width="12" stroke-linecap="round"/>' +
+      '<path d="M200 352 L216 392 L184 392 Z" fill="' + a + '"/>' +
+      '<circle cx="172" cy="404" r="6" fill="' + a + '"/><circle cx="228" cy="424" r="6" fill="' + a + '"/>';
+  }
+
   const DRAW = {
     gown: drawGown, tea: drawTea, petal: drawPetal, adventure: drawAdventure, explorer: drawExplorer,
     knight: drawKnight, pastel: drawPastel, star: drawStar, picnic: drawPicnic, coat: drawCoat,
-    garden: drawGarden, royal: drawRoyal, sailor: drawSailor, spark: drawSpark
+    garden: drawGarden, royal: drawRoyal, sailor: drawSailor, spark: drawSpark,
+    blossom: drawBlossomDress, frost: drawFrost, night: drawNight, festival: drawFestival
   };
 
   function armPoints(p, outfit) {
@@ -801,6 +848,24 @@
         '<circle cx="310" cy="428" r="2.2" fill="#2c2430"/><circle cx="322" cy="428" r="2.2" fill="#2c2430"/>' +
         '<ellipse cx="316" cy="436" rx="3" ry="2" fill="#2c2430" opacity="0.35"/>' +
         '<path d="M312 440 Q316 446 322 440" fill="#f2a0b0"/>';
+    }
+    if (p.pet === "bird") {
+      return '<ellipse cx="336" cy="472" rx="16" ry="5" fill="rgba(90,49,68,0.12)"/>' +
+        '<ellipse cx="334" cy="452" rx="16" ry="11" fill="' + c + '"/>' +
+        '<circle cx="318" cy="440" r="9" fill="' + c + '"/>' +
+        '<path d="M310 440 L296 444 L310 448 Z" fill="' + d + '"/>' +
+        '<circle cx="314" cy="438" r="1.7" fill="#2c2430"/>' +
+        '<ellipse cx="340" cy="448" rx="10" ry="6" fill="' + l + '" transform="rotate(-20 340 448)"/>' +
+        '<path d="M326 462 L322 472 M340 462 L344 472" stroke="' + d + '" stroke-width="2" stroke-linecap="round"/>';
+    }
+    if (p.pet === "bunny") {
+      return '<ellipse cx="334" cy="478" rx="18" ry="6" fill="rgba(90,49,68,0.12)"/>' +
+        '<ellipse cx="330" cy="458" rx="18" ry="15" fill="' + c + '"/>' +
+        '<circle cx="316" cy="440" r="12" fill="' + c + '"/>' +
+        '<ellipse cx="308" cy="422" rx="4" ry="12" fill="' + c + '"/><ellipse cx="324" cy="422" rx="4" ry="12" fill="' + c + '"/>' +
+        '<ellipse cx="308" cy="424" rx="2" ry="7" fill="' + l + '"/><ellipse cx="324" cy="424" rx="2" ry="7" fill="' + l + '"/>' +
+        '<circle cx="311" cy="438" r="1.7" fill="#2c2430"/><circle cx="321" cy="438" r="1.7" fill="#2c2430"/>' +
+        '<ellipse cx="316" cy="444" rx="2.2" ry="1.5" fill="' + d + '"/>';
     }
     return '<ellipse cx="328" cy="482" rx="28" ry="8" fill="rgba(90,49,68,0.13)"/>' +
       '<ellipse cx="300" cy="436" rx="16" ry="10" fill="' + l + '" transform="rotate(-28 300 436)"/>' +

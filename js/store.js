@@ -36,7 +36,7 @@
   }
 
   function sanitizeBadges(list) {
-    const known = { kitten: 1, bread: 1, flowers: 1, garden: 1, ball: 1 };
+    const known = { kitten: 1, bread: 1, flowers: 1, garden: 1, ball: 1, snowfest: 1, spring: 1 };
     if (!Array.isArray(list)) return [];
     const out = [];
     list.forEach(function (id) {
@@ -86,7 +86,8 @@
       kingdom: freshKingdom(),
       savedKingdoms: [],
       badges: [],
-      play: sanitizePlay(null)
+      play: sanitizePlay(null),
+      event: "auto"
     };
   }
 
@@ -141,6 +142,7 @@
       base.savedKingdoms = sanitizeKingdomList(parsed.savedKingdoms);
       base.badges = sanitizeBadges(parsed.badges);
       base.play = sanitizePlay(parsed.play);
+      base.event = parsed.event === "snow" || parsed.event === "spring" || parsed.event === "off" ? parsed.event : "auto";
       this.data = base;
       return this.data;
     },
