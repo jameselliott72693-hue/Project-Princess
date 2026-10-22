@@ -29,7 +29,8 @@
 
   const BLOCK = {
     water: 1, sea: 1, wall: 1, tower: 1, throne: 1, tree: 1, pine: 1, palm: 1,
-    fountain: 1, house: 1, bakery: 1, stall: 1, boat: 1
+    fountain: 1, house: 1, bakery: 1, stall: 1, boat: 1,
+    bed: 1, table: 1, shelf: 1, cake: 1, swing: 1
   };
   const ANIMALS = { bunny: 1, duck: 1, bird: 1, deer: 1, kitten: 1 };
 
@@ -38,6 +39,7 @@
     { id: "nature", label: "Nature" },
     { id: "town", label: "Town" },
     { id: "animals", label: "Animals" },
+    { id: "rooms", label: "Rooms" },
     { id: "extra", label: "Extra" }
   ];
 
@@ -73,7 +75,15 @@
     { id: "fountain", label: "Fountain", group: "extra" },
     { id: "lamp", label: "Lamp", group: "extra" },
     { id: "bench", label: "Bench", group: "extra" },
-    { id: "banner", label: "Flag", group: "extra" }
+    { id: "banner", label: "Flag", group: "extra" },
+    { id: "bed", label: "Bed", group: "rooms" },
+    { id: "table", label: "Table", group: "rooms" },
+    { id: "rug", label: "Rug", group: "rooms" },
+    { id: "shelf", label: "Shelf", group: "rooms" },
+    { id: "cake", label: "Cake", group: "rooms" },
+    { id: "swing", label: "Swing", group: "rooms" },
+    { id: "wreath", label: "Wreath", group: "extra", event: "snow" },
+    { id: "blossom", label: "Blossom", group: "extra", event: "spring" }
   ];
 
   const KNOWN = { grass: 1 };
@@ -285,7 +295,7 @@
     if (id === "stall") return "stall";
     if (ANIMALS[id]) return "animal";
     if (id === "flowers") return "flowers";
-    if (id === "snowman" || id === "shell") return "sparkle";
+    if (id === "snowman" || id === "shell" || id === "wreath" || id === "blossom" || id === "cake") return "sparkle";
     return null;
   }
 
@@ -1035,6 +1045,119 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     ctx.fillRect(x + TILE - 12, y + 6, 6, TILE - 12);
   }
 
+  function drawBed(ctx, x, y) {
+    shadow(ctx, x + 32, y + 52, 22, 5);
+    ctx.fillStyle = "#c4844a";
+    roundRect(ctx, x + 8, y + 28, 48, 26, 6);
+    ctx.fill();
+    ctx.fillStyle = "#fff6ea";
+    roundRect(ctx, x + 12, y + 16, 40, 16, 6);
+    ctx.fill();
+    ctx.fillStyle = "#f2849a";
+    roundRect(ctx, x + 14, y + 32, 36, 16, 4);
+    ctx.fill();
+  }
+
+  function drawTable(ctx, x, y) {
+    shadow(ctx, x + 32, y + 52, 18, 4);
+    ctx.fillStyle = "#c4844a";
+    roundRect(ctx, x + 10, y + 24, 44, 10, 3);
+    ctx.fill();
+    ctx.fillRect(x + 16, y + 34, 5, 16);
+    ctx.fillRect(x + 43, y + 34, 5, 16);
+    ctx.fillStyle = "#f2c14e";
+    ctx.beginPath();
+    ctx.arc(x + 32, y + 22, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRug(ctx, x, y) {
+    ctx.fillStyle = "#e25b7a";
+    roundRect(ctx, x + 8, y + 18, 48, 32, 12);
+    ctx.fill();
+    ctx.strokeStyle = "#f2c14e";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  function drawShelf(ctx, x, y) {
+    ctx.fillStyle = "#8d5a34";
+    ctx.fillRect(x + 14, y + 14, 4, 36);
+    ctx.fillRect(x + 46, y + 14, 4, 36);
+    ctx.fillRect(x + 12, y + 18, 40, 5);
+    ctx.fillRect(x + 12, y + 36, 40, 5);
+    ctx.fillStyle = "#7ec8ea";
+    roundRect(ctx, x + 18, y + 8, 8, 10, 2);
+    ctx.fill();
+    ctx.fillStyle = "#f2849a";
+    roundRect(ctx, x + 32, y + 6, 8, 12, 2);
+    ctx.fill();
+    ctx.fillStyle = "#e8b84a";
+    roundRect(ctx, x + 20, y + 28, 12, 8, 2);
+    ctx.fill();
+  }
+
+  function drawCake(ctx, x, y) {
+    shadow(ctx, x + 32, y + 52, 16, 4);
+    ctx.fillStyle = "#fff6ea";
+    roundRect(ctx, x + 14, y + 28, 36, 22, 6);
+    ctx.fill();
+    ctx.fillStyle = "#f2849a";
+    roundRect(ctx, x + 14, y + 22, 36, 12, 6);
+    ctx.fill();
+    ctx.fillStyle = "#e26d7a";
+    ctx.fillRect(x + 30, y + 12, 3, 10);
+    ctx.fillStyle = "#ffe08a";
+    ctx.beginPath();
+    ctx.arc(x + 31.5, y + 11, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSwing(ctx, x, y) {
+    ctx.strokeStyle = "#8d5a34";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x + 12, y + 8);
+    ctx.lineTo(x + 52, y + 8);
+    ctx.moveTo(x + 18, y + 8);
+    ctx.lineTo(x + 18, y + 30);
+    ctx.moveTo(x + 46, y + 8);
+    ctx.lineTo(x + 46, y + 30);
+    ctx.stroke();
+    ctx.fillStyle = "#e25b7a";
+    roundRect(ctx, x + 16, y + 28, 32, 8, 3);
+    ctx.fill();
+  }
+
+  function drawWreath(ctx, x, y) {
+    ctx.strokeStyle = "#2f6f4e";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(x + 32, y + 30, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "#e26d7a";
+    ctx.beginPath();
+    ctx.arc(x + 32, y + 46, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBlossomTile(ctx, x, y) {
+    ctx.fillStyle = "#3e9a6a";
+    ctx.fillRect(x + 30, y + 30, 4, 22);
+    const colors = ["#f2849a", "#fff6ea", "#f2c14e", "#e26d7a"];
+    colors.forEach(function (color, i) {
+      const angle = i * Math.PI / 2;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + 32 + Math.cos(angle) * 10, y + 24 + Math.sin(angle) * 10, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillStyle = "#f2c14e";
+    ctx.beginPath();
+    ctx.arc(x + 32, y + 24, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function drawProp(ctx, x, y, id, c, r, cells, state) {
     const hop = hopOf(state, c, r);
     if (id === "wall") drawWall(ctx, x, y, cells, c, r);
@@ -1068,6 +1191,14 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     else if (id === "bird") drawBird(ctx, x, y, hop);
     else if (id === "deer") drawDeer(ctx, x, y, hop);
     else if (id === "kitten") drawKitten(ctx, x, y, hop);
+    else if (id === "bed") drawBed(ctx, x, y);
+    else if (id === "table") drawTable(ctx, x, y);
+    else if (id === "rug") drawRug(ctx, x, y);
+    else if (id === "shelf") drawShelf(ctx, x, y);
+    else if (id === "cake") drawCake(ctx, x, y);
+    else if (id === "swing") drawSwing(ctx, x, y);
+    else if (id === "wreath") drawWreath(ctx, x, y);
+    else if (id === "blossom") drawBlossomTile(ctx, x, y);
   }
 
   function miniHair(ctx, style) {
@@ -1138,6 +1269,25 @@ function drawGate(ctx, x, y, cells, c, r, open) {
       ctx.beginPath();
       ctx.moveTo(-7, -4);
       ctx.quadraticCurveTo(-14, -10, -8, -1);
+      ctx.fill();
+    } else if (princess.pet === "bird") {
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 8, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(6, -8, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = Paint.mix(color, "#ffffff", 0.45);
+      ctx.beginPath();
+      ctx.ellipse(-4, -6, 5, 3, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (princess.pet === "bunny") {
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 7, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(-3, -16, 2, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(3, -16, 2, 6, 0, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.beginPath();
