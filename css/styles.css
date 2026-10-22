@@ -149,7 +149,7 @@ main {
 
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   max-width: 980px;
   margin: 0 auto 18px;
@@ -174,6 +174,7 @@ main {
 .home-card.design { background: #ffd0de; color: #8c2348; }
 .home-card.build { background: #d9f2c2; color: #2f6f4e; }
 .home-card.story { background: #d7f3ff; color: #1f5f86; }
+.home-card.play { background: #fff1c9; color: #8a5a12; }
 .home-card:active { transform: translateY(3px); }
 
 .section-label {
@@ -428,6 +429,26 @@ main {
 
 .sticker { width: 72px; height: 72px; }
 
+.play-screen { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
+.play-note { text-align: center; font-size: 1.15rem; margin: 0; }
+.play-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.plot, .hook {
+  min-height: 120px;
+  border-radius: 22px;
+  border: 3px solid #fff;
+  background: #e7f6d4;
+  box-shadow: 0 4px 0 rgba(90, 49, 68, 0.1);
+  padding: 6px;
+}
+.hook { background: #f6e2c8; }
+.plot svg, .hook svg { width: 100%; height: 96px; }
+.ballroom {
+  background: linear-gradient(#fff6ea, #f6e2c8);
+  border-radius: 28px;
+  padding: 16px;
+  border: 4px solid #fff;
+}
+
 .season-bar {
   max-width: 760px;
   margin: 0 auto 16px;
@@ -653,6 +674,7 @@ canvas.board.slide-mode { touch-action: pan-x pan-y; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 @media (min-width: 960px) {
+  .home-grid { grid-template-columns: repeat(4, 1fr); }
   .studio {
     grid-template-columns: minmax(340px, 460px) minmax(300px, 1fr);
     align-items: start;

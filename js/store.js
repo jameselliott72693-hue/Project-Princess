@@ -36,7 +36,7 @@
   }
 
   function sanitizeBadges(list) {
-    const known = { kitten: 1, bread: 1, flowers: 1, snowfest: 1, spring: 1 };
+    const known = { kitten: 1, bread: 1, flowers: 1, garden: 1, ball: 1, snowfest: 1, spring: 1 };
     if (!Array.isArray(list)) return [];
     const out = [];
     list.forEach(function (id) {
@@ -64,6 +64,18 @@
     return packed;
   }
 
+  function sanitizePlay(raw) {
+    const play = raw && typeof raw === "object" ? raw : {};
+    const garden = [];
+    const sourceGarden = Array.isArray(play.garden) ? play.garden : [];
+    for (let i = 0; i < 6; i++) garden.push(sourceGarden[i] ? 1 : 0);
+    const allowed = { banner: 1, flower: 1, lantern: 1 };
+    const ball = [];
+    const sourceBall = Array.isArray(play.ball) ? play.ball : [];
+    for (let i = 0; i < 6; i++) ball.push(allowed[sourceBall[i]] ? sourceBall[i] : "");
+    return { garden: garden, ball: ball };
+  }
+
   function fresh() {
     return {
       v: 1,
@@ -74,6 +86,7 @@
       kingdom: freshKingdom(),
       savedKingdoms: [],
       badges: [],
+      play: sanitizePlay(null),
       event: "auto"
     };
   }
@@ -128,6 +141,7 @@
       }
       base.savedKingdoms = sanitizeKingdomList(parsed.savedKingdoms);
       base.badges = sanitizeBadges(parsed.badges);
+      base.play = sanitizePlay(parsed.play);
       base.event = parsed.event === "snow" || parsed.event === "spring" || parsed.event === "off" ? parsed.event : "auto";
       this.data = base;
       return this.data;
