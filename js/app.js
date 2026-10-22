@@ -97,6 +97,7 @@
     muteBtn.innerHTML = ico(mute ? "mute" : "sound") + "<span>" + (mute ? "Muted" : "Sound") + "</span>";
     muteBtn.setAttribute("aria-pressed", mute ? "true" : "false");
     muteBtn.setAttribute("aria-label", mute ? "Sound is off" : "Sound is on");
+    document.body.dataset.season = Season.current();
   }
 
   function stopLoop() {
@@ -307,7 +308,7 @@
   function renderHome() {
     main.innerHTML = '<section class="hero"><div class="hero-castle">' + heroCastle() + '</div><div class="hero-princess">' +
       Princess.svg(working, { thumb: true }) + "</div></section>" +
-      '<h2 class="home-lead">A little kingdom</h2>' + badgeRow() +
+      '<h2 class="home-lead">A little kingdom</h2>' + badgeRow() + seasonBar() +
       '<div class="home-grid">' +
       '<button type="button" class="home-card design" data-act="go-design">' + ico("dress").replace('class="ico"', 'class="ico big-ico"') + "<span>Design</span></button>" +
       '<button type="button" class="home-card build" data-act="go-build">' + ico("castle").replace('class="ico"', 'class="ico big-ico"') + "<span>Build</span></button>" +
@@ -316,6 +317,27 @@
       '<h3 class="section-label">Princesses</h3>' + savedPrincessCards() +
       '<h3 class="section-label">Kingdoms</h3>' + savedKingdomCards();
     paintMinis(main);
+  }
+
+  function seasonBar() {
+    const picked = Season.choice();
+    const now = Season.current();
+    const buttons = [
+      ["auto", "By date"],
+      ["snow", "Snow festival"],
+      ["spring", "Spring garden"],
+      ["off", "Quiet"]
+    ].map(function (item) {
+      const on = picked === item[0];
+      return '<button type="button" class="btn seg' + (on ? " is-on" : "") + '" data-act="event" data-id="' + item[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' + item[1] + "</button>";
+    }).join("");
+    const badge = now === "snow" ? "snowfest" : now === "spring" ? "spring" : "";
+    const owned = badge && (Store.data.badges || []).indexOf(badge) >= 0;
+    let note = "No festival today. You can still pick one.";
+    if (now === "snow") note = owned ? "Snow festival is here. You have the snow sticker." : "Snow festival is here. Join for a snow sticker.";
+    if (now === "spring") note = owned ? "Spring garden is here. You have the blossom sticker." : "Spring garden is here. Join for a blossom sticker.";
+    const join = badge && !owned ? '<button type="button" class="btn primary" data-act="join-season">Join</button>' : "";
+    return '<div class="season-bar"><p class="season-note">' + note + '</p><div class="choice-row">' + buttons + "</div>" + join + "</div>";
   }
 
   function swatches(colors, key, current) {
@@ -508,7 +530,11 @@
   function renderTools() {
     const box = document.getElementById("tools");
     if (!box) return;
-    const tiles = Realm.TILES.filter(function (tile) { return tile.group === buildGroup; }).slice().sort(function (a, b) {
+    const tiles = Realm.TILES.filter(function (tile) {
+      if (tile.group !== buildGroup) return false;
+      if (tile.event && tile.event !== Season.current()) return false;
+      return true;
+    }).slice().sort(function (a, b) {
       function rank(tile) {
         if (!tile.theme) return 1;
         return tile.theme === Store.data.kingdom.theme ? 0 : 2;
@@ -910,6 +936,9 @@
   function stickerSvg(id) {
     if (id === "kitten") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#ffe1ec"/><circle cx="24" cy="34" r="8" fill="#e8a87c"/><circle cx="40" cy="34" r="8" fill="#e8a87c"/><path d="M18 28 L22 18 L28 28 M36 28 L40 18 L46 28" fill="#e8a87c"/></svg>';
     if (id === "bread") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff1d6"/><ellipse cx="32" cy="34" rx="16" ry="10" fill="#e0b15a"/><path d="M20 34 H44" stroke="#c4844a" stroke-width="2"/></svg>';
+    if (id === "flowers") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
+    if (id === "snowfest") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f4ff"/><path d="M32 14 V50 M18 22 L46 42 M46 22 L18 42" stroke="#7ec8ea" stroke-width="4" stroke-linecap="round"/></svg>';
+    if (id === "spring") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="30" r="6" fill="#f2c14e"/><circle cx="24" cy="36" r="6" fill="#f2849a"/><circle cx="40" cy="36" r="6" fill="#e26d7a"/></svg>';
     return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
   }
 
@@ -920,7 +949,7 @@
   }
 
   function openSticker(id) {
-    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker" };
+    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker", snowfest: "Snow sticker", spring: "Blossom sticker" };
     showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>' + titles[id] + "</h2>" +
       stickerSvg(id) + '<p class="modal-lead">You did it.</p><div class="row"><button type="button" class="btn primary" id="close-sticker">Close</button></div></div>', "sticker", true);
     document.getElementById("close-sticker").onclick = hideModal;
@@ -1159,6 +1188,7 @@
       helpStep("c", "castle", "Build", "Tap a piece. Tap the map. Try a bigger size or a new theme.") +
       helpStep("d", "walk", "Explore", "Walk around. Quests give a sticker.") +
       helpStep("a", "picture", "Story", "Read a little book about her. Tap Read to hear it.") +
+      helpStep("b", "spark", "Festivals", "Snow festival and Spring garden can be picked by hand.") +
       '</div><button type="button" class="btn primary" id="help-go">Let\'s go</button></div>', "help", true);
     document.getElementById("help-go").onclick = hideModal;
   }
@@ -1504,6 +1534,23 @@
     if (act === "go-design") { Sfx.tap(); show("design"); return; }
     if (act === "go-build") { Sfx.tap(); show("build"); return; }
     if (act === "go-explore") { Sfx.tap(); show("explore"); return; }
+    if (act === "event") {
+      Store.data.event = btn.dataset.id;
+      Store.persist();
+      renderHome();
+      updateChrome();
+      Sfx.tap();
+      return;
+    }
+    if (act === "join-season") {
+      const now = Season.current();
+      const id = now === "snow" ? "snowfest" : "spring";
+      if (Store.awardBadge(id)) openSticker(id);
+      renderHome();
+      updateChrome();
+      Sfx.chime();
+      return;
+    }
     if (act === "quests") { openQuests(); Sfx.tap(); return; }
     if (act === "tab") {
       designTab = btn.dataset.id;
