@@ -37,6 +37,7 @@
   let buildUndo = [];
   let buildTool = "flowers";
   let buildGroup = "nature";
+  let playTab = "garden";
   let buildSliding = false;
   let buildBig = false;
   let exploreSource = "working";
@@ -84,7 +85,7 @@
   }
 
   function updateChrome() {
-    const titles = { home: "Petal Palace", design: "Design", build: "Build", explore: "Explore" };
+    const titles = { home: "Petal Palace", design: "Design", build: "Build", explore: "Explore", play: "Play" };
     document.getElementById("title").textContent = titles[view] || "Petal Palace";
     const homeBtn = document.getElementById("btn-home");
     homeBtn.innerHTML = ico(view === "home" ? "spark" : "home") + "<span>Home</span>";
@@ -124,6 +125,7 @@
     path = [];
     afterMove = null;
     if (next === "home") renderHome();
+    if (next === "play") renderPlay();
     if (next === "design") renderDesigner();
     if (next === "build" || next === "explore") Realm.use(Store.data.kingdom);
     if (next === "build") {
@@ -201,10 +203,28 @@
       '<div class="home-grid">' +
       '<button type="button" class="home-card design" data-act="go-design">' + ico("dress").replace('class="ico"', 'class="ico big-ico"') + "<span>Design</span></button>" +
       '<button type="button" class="home-card build" data-act="go-build">' + ico("castle").replace('class="ico"', 'class="ico big-ico"') + "<span>Build</span></button>" +
+      '<button type="button" class="home-card play" data-act="go-play">' + ico("spark").replace('class="ico"', 'class="ico big-ico"') + "<span>Play</span></button>" +
       "</div>" +
       '<h3 class="section-label">Princesses</h3>' + savedPrincessCards() +
       '<h3 class="section-label">Kingdoms</h3>' + savedKingdomCards();
     paintMinis(main);
+  }
+
+  function renderPlay() {
+    const play = Store.data.play;
+    const garden = playTab === "garden";
+    const board = garden ? Play.garden(play.garden) : Play.ballroom(play.ball);
+    const note = garden
+      ? "Tap a dry patch. A flower grows. Every patch can bloom."
+      : "Tap a place in the ballroom. Something pretty appears. Tap again to change it.";
+    main.innerHTML = '<section class="play-screen"><div class="choice-row">' +
+      '<button type="button" class="btn seg' + (garden ? " is-on" : "") + '" data-act="play-tab" data-id="garden" aria-pressed="' + (garden ? "true" : "false") + '">Garden</button>' +
+      '<button type="button" class="btn seg' + (!garden ? " is-on" : "") + '" data-act="play-tab" data-id="ball" aria-pressed="' + (!garden ? "true" : "false") + '">Ballroom</button>' +
+      "</div>" + board + '<p class="season-note play-note">' + note + "</p></section>";
+  }
+
+  function finishPlay(id) {
+    if (Store.awardBadge(id)) openSticker(id);
   }
 
   function swatches(colors, key, current) {
@@ -553,6 +573,7 @@
     );
     main.innerHTML = '<section><div class="map-tools">' +
       '<button type="button" class="btn" data-act="go-build">' + ico("castle") + "<span>Build</span></button>" +
+      '<button type="button" class="btn" data-act="go-play">' + ico("spark") + "<span>Play</span></button>" +
       '<button type="button" class="btn" data-act="quests">' + ico("spark") + "<span>Quests</span></button>" +
       '<button type="button" class="btn" data-act="zoom">' + (buildBig ? "Fit" : "Bigger") + "</button>" +
       "</div><p class=\"quest-hint\" id=\"quest-hint\">" + Paint.esc(questHint()) + "</p>" +
@@ -799,6 +820,9 @@
   function stickerSvg(id) {
     if (id === "kitten") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#ffe1ec"/><circle cx="24" cy="34" r="8" fill="#e8a87c"/><circle cx="40" cy="34" r="8" fill="#e8a87c"/><path d="M18 28 L22 18 L28 28 M36 28 L40 18 L46 28" fill="#e8a87c"/></svg>';
     if (id === "bread") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff1d6"/><ellipse cx="32" cy="34" rx="16" ry="10" fill="#e0b15a"/><path d="M20 34 H44" stroke="#c4844a" stroke-width="2"/></svg>';
+    if (id === "flowers") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
+    if (id === "garden") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><path d="M32 46 V28" stroke="#3e9a6a" stroke-width="3"/><circle cx="32" cy="24" r="6" fill="#f2849a"/><circle cx="24" cy="30" r="5" fill="#f2c14e"/><circle cx="40" cy="30" r="5" fill="#e26d7a"/></svg>';
+    if (id === "ball") return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#fff1d6"/><rect x="26" y="16" width="4" height="28" fill="#8d5a34"/><path d="M30 18 H46 L40 28 H30 Z" fill="#e25b7a"/></svg>';
     return '<svg class="sticker" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="#e7f6d8"/><circle cx="32" cy="34" r="8" fill="#f2849a"/><circle cx="22" cy="30" r="6" fill="#f2c14e"/><circle cx="42" cy="30" r="6" fill="#e26d7a"/></svg>';
   }
 
@@ -809,7 +833,7 @@
   }
 
   function openSticker(id) {
-    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker" };
+    const titles = { kitten: "Paw sticker", bread: "Bread sticker", flowers: "Flower sticker", garden: "Garden sticker", ball: "Ballroom sticker" };
     showModal('<div class="modal-card" role="dialog" aria-modal="true"><h2>' + titles[id] + "</h2>" +
       stickerSvg(id) + '<p class="modal-lead">You did it.</p><div class="row"><button type="button" class="btn primary" id="close-sticker">Close</button></div></div>', "sticker", true);
     document.getElementById("close-sticker").onclick = hideModal;
@@ -1047,6 +1071,7 @@
       helpStep("b", "save", "Save", "Keep her on this device.") +
       helpStep("c", "castle", "Build", "Tap a piece. Tap the map. Try a bigger size or a new theme.") +
       helpStep("d", "walk", "Explore", "Walk around. Quests give a sticker.") +
+      helpStep("c", "spark", "Play", "Water the garden or decorate the ballroom.") +
       '</div><button type="button" class="btn primary" id="help-go">Let\'s go</button></div>', "help", true);
     document.getElementById("help-go").onclick = hideModal;
   }
@@ -1379,6 +1404,38 @@
     if (act === "go-design") { Sfx.tap(); show("design"); return; }
     if (act === "go-build") { Sfx.tap(); show("build"); return; }
     if (act === "go-explore") { Sfx.tap(); show("explore"); return; }
+    if (act === "go-play") { Sfx.tap(); show("play"); return; }
+    if (act === "play-tab") {
+      playTab = btn.dataset.id === "ball" ? "ball" : "garden";
+      renderPlay();
+      Sfx.tap();
+      return;
+    }
+    if (act === "water") {
+      const index = Number(btn.dataset.id);
+      const garden = Store.data.play.garden.slice();
+      if (garden[index] !== 0 && garden[index] !== 1) return;
+      garden[index] = 1;
+      Store.data.play.garden = garden;
+      Store.persist();
+      renderPlay();
+      if (garden.every(function (flag) { return flag; })) finishPlay("garden");
+      Sfx.pop();
+      return;
+    }
+    if (act === "decorate") {
+      const index = Number(btn.dataset.id);
+      const ball = Store.data.play.ball.slice();
+      const order = Play.ballOrder;
+      const at = order.indexOf(ball[index]);
+      ball[index] = order[(at + 1) % order.length];
+      Store.data.play.ball = ball;
+      Store.persist();
+      renderPlay();
+      if (ball.every(function (kind) { return kind; })) finishPlay("ball");
+      Sfx.pop();
+      return;
+    }
     if (act === "quests") { openQuests(); Sfx.tap(); return; }
     if (act === "tab") {
       designTab = btn.dataset.id;

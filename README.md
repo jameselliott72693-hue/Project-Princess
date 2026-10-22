@@ -22,6 +22,8 @@ The pages use big buttons, short labels, and a map you can place or slide. On a 
 
 ## Play
 
+**Play** — from Home or Explore, open two gentle games. **Garden** grows a flower each time you tap a dry patch. **Ballroom** hangs a banner, a flower, or a lantern when you tap a place. Nothing goes wrong. Finishing a game keeps a sticker on this device.
+
 **Design** — change skin, face, eyes, hair, dresses, shoes, crowns, capes, wands, jewelry, and a pet. Hair includes long, wavy, curly, coily, braids, a side braid, a bun, twin buns, a bob, a pixie cut, a ponytail, twists, and a halo braid. Outfits include gowns, adventure clothes, and armor. **Random** mixes a look. **Undo** steps back. **Save** keeps her on this device. **Picture** downloads a PNG portrait.
 
 **Build** — tap a piece, then tap the map. Pieces include castle walls, towers, a gate, and a throne; grass, paths, water, bridges, trees, gardens, and flowers; houses, a bakery, and market stalls; animals and small decorations. Winter adds snow, ice, pines, and snowmen. Seaside adds sand, sea, palms, shells, and boats. **Cozy**, **Wide**, and **Grand** change the map size. Older saves stay cozy meadow maps. **Erase** paints the ground for the current theme. **Undo** removes the last stroke. **Starters** opens a meadow, a little castle, a riverside, a royal garden, a snow castle, a sunny shore, or a grand meadow. **Save** keeps the kingdom on this device.
