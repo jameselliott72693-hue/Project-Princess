@@ -377,8 +377,10 @@
       '<span class="choice-art">' + art + '</span><span class="choice-label">' + Paint.esc(label) + "</span></button>";
   }
 
-  function preview(overrides) {
-    return Princess.svg(Object.assign({}, working, overrides), { thumb: true });
+  function preview(overrides, focus) {
+    const opts = { thumb: true };
+    if (focus) opts.focus = focus;
+    return Princess.svg(Object.assign({}, working, overrides), opts);
   }
 
   function panelHtml() {
@@ -396,16 +398,18 @@
         }).join("") + '</div><h3 class="panel-title">Eyes</h3>' + swatches(Princess.EYE_COLORS, "eye", p.eye) + colorAny("eye", p.eye);
     }
     if (designTab === "hair") {
-      return '<h3 class="panel-title">Hair</h3><div class="choice-grid">' +
+      const hairShot = { crown: "none", hairExtra: "none", cape: false, wand: false };
+      return '<div class="hair-panel"><h3 class="panel-title">Hairstyle</h3><div class="choice-grid hair-grid">' +
         Princess.HAIRS.map(function (item) {
-          return choiceButton("set-hair", item.id, item.label, preview({ hair: item.id }), p.hair === item.id);
-        }).join("") + '</div><h3 class="panel-title">Hair color</h3>' +
+          return choiceButton("set-hair", item.id, item.label, preview(Object.assign({ hair: item.id }, hairShot), "head"), p.hair === item.id);
+        }).join("") + '</div><h3 class="panel-title">Hair color</h3><div class="hair-colors">' +
         swatches(Princess.HAIR_COLORS, "hairColor", p.hairColor) + colorAny("hairColor", p.hairColor) +
-        '<h3 class="panel-title">Clip</h3><div class="choice-grid">' +
+        '</div><h3 class="panel-title">Clip</h3><div class="choice-grid hair-grid clip-grid">' +
         Princess.EXTRAS.map(function (item) {
-          return choiceButton("set-extra", item.id, item.label, preview({ hairExtra: item.id, extraColor: p.extraColor }), p.hairExtra === item.id);
-        }).join("") + '</div><h3 class="panel-title">Clip color</h3>' +
-        swatches(Princess.EXTRA_COLORS, "extraColor", p.extraColor) + colorAny("extraColor", p.extraColor);
+          return choiceButton("set-extra", item.id, item.label, preview({ hairExtra: item.id, extraColor: p.extraColor, crown: "none", cape: false, wand: false }, "head"), p.hairExtra === item.id);
+        }).join("") + '</div><h3 class="panel-title">Clip color</h3><div class="hair-colors">' +
+        swatches(Princess.EXTRA_COLORS, "extraColor", p.extraColor) + colorAny("extraColor", p.extraColor) +
+        "</div></div>";
     }
     if (designTab === "dress") {
       return '<h3 class="panel-title">Dress</h3><div class="choice-grid">' +

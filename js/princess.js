@@ -93,8 +93,8 @@
   ];
   const NAMES = ["Sunny", "Pip", "Luna", "Clover", "Birdie", "Nia", "Amina", "Hana", "Rosa", "Willa", "Noor", "Imani", "Lila", "Bea", "June", "Poppy", "Freya", "Marigold", "Tess", "Goldie", "Asha", "Mei", "Leila", "Sora", "Nell", "Priya", "Elise", "Noa", "Zuri", "Alma"];
   const CROWN_Y = {
-    long: 112, wavy: 108, curly: 78, coily: 58, braids: 112, sidebraid: 112,
-    bun: 42, buns: 86, bob: 116, pixie: 112, pony: 96, twists: 114, halo: 74
+    long: 90, wavy: 88, curly: 64, coily: 40, braids: 90, sidebraid: 90,
+    bun: 70, buns: 84, bob: 92, pixie: 100, pony: 86, twists: 92, halo: 56
   };
   const SIGN_FIELDS = ["name", "skin", "face", "expression", "eye", "hair", "hairColor", "hairExtra", "extraColor", "outfit", "outfitColor", "outfitAccent", "shoes", "shoeColor", "crown", "crownColor", "cape", "capeColor", "wand", "wandColor", "necklace", "earrings", "gemColor", "pet", "petColor"];
 
@@ -320,149 +320,265 @@
       '<path d="M ' + (200 + layout.eyeDX - 12) + " " + (y + lift) + " Q " + (200 + layout.eyeDX) + " " + (y - 6 + lift) + " " + (200 + layout.eyeDX + 12) + " " + (y + lift) + '" fill="none" stroke="#4a3040" stroke-width="2.6" stroke-linecap="round"/>';
   }
 
-  function bangs(c, l) {
-    return '<path d="M146 166 Q168 120 200 118 Q236 122 256 166 Q232 148 200 156 Q166 150 146 166 Z" fill="' + c + '"/>' +
-      '<path d="M170 138 Q196 128 214 142" fill="none" stroke="' + l + '" stroke-width="4" stroke-linecap="round" opacity="0.55"/>';
+  function hairTone(color) {
+    return {
+      c: color,
+      d: Paint.mix(color, "#1a1210", 0.34),
+      m: Paint.mix(color, "#1a1210", 0.16),
+      l: Paint.lighten(color, 0.32)
+    };
   }
 
-  function longStraight(c, d, l) {
-    return '<path d="M150 170 C136 240 124 340 134 470 H266 C276 340 264 240 250 170 Q200 142 150 170 Z" fill="' + d + '"/>' +
-      '<path d="M128 196 C108 270 104 370 122 486 H158 C140 370 150 260 164 196 Z" fill="' + c + '"/>' +
-      '<path d="M272 196 C292 270 296 370 278 486 H242 C260 370 250 260 236 196 Z" fill="' + c + '"/>' +
-      '<path d="M156 176 Q176 156 196 172" fill="none" stroke="' + l + '" stroke-width="6" stroke-linecap="round" opacity="0.45"/>';
+  function hairInk(uid, color) {
+    const id = uid + "hf";
+    const tone = hairTone(color);
+    return {
+      defs: '<linearGradient id="' + id + '" x1="0.15" y1="0" x2="0.7" y2="1">' +
+        '<stop offset="0" stop-color="' + Paint.lighten(color, 0.24) + '"/>' +
+        '<stop offset="0.4" stop-color="' + color + '"/>' +
+        '<stop offset="1" stop-color="' + tone.d + '"/></linearGradient>',
+      fill: "url(#" + id + ")",
+      c: tone.c,
+      d: tone.d,
+      m: tone.m,
+      l: tone.l
+    };
   }
 
-  function longWavy(c, d, l) {
-    return '<path d="M146 172 C124 250 150 330 118 410 C142 448 124 492 156 504 H248 C280 492 262 448 286 410 C254 330 280 250 254 172 Q200 140 146 172 Z" fill="' + d + '"/>' +
-      '<path d="M122 206 C96 286 132 350 106 430 C130 468 114 508 150 512 H176 C152 450 176 340 160 220 Z" fill="' + c + '"/>' +
-      '<path d="M278 206 C304 286 268 350 294 430 C270 468 286 508 250 512 H224 C248 450 224 340 240 220 Z" fill="' + c + '"/>' +
-      '<path d="M164 190 Q186 214 170 258" fill="none" stroke="' + l + '" stroke-width="5" stroke-linecap="round" opacity="0.4"/>';
+  function hairCap(fill) {
+    return '<path d="M122 190 C112 128 150 82 200 78 C250 82 288 128 278 190 C254 158 228 144 200 146 C172 144 146 158 122 190 Z" fill="' + fill + '"/>';
   }
 
-  function curly(c, d, l) {
-    const spots = [[200, 98, 22], [156, 114, 20], [246, 114, 20], [122, 154, 22], [278, 154, 22], [112, 198, 20], [290, 198, 20], [118, 240, 18], [284, 240, 18], [128, 278, 16], [274, 278, 16], [146, 108, 15], [254, 108, 15]];
-    let out = '<ellipse cx="200" cy="162" rx="72" ry="64" fill="' + c + '"/>';
-    spots.forEach(function (s, i) {
-      const fill = i % 2 ? d : c;
-      out += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + s[2] + '" fill="' + fill + '"/>';
-      out += '<circle cx="' + (s[0] - 4) + '" cy="' + (s[1] - 4) + '" r="' + Math.max(3, s[2] * 0.28).toFixed(1) + '" fill="' + l + '" opacity="0.5"/>';
-    });
-    return out;
+  function bangsSoft(fill) {
+    return '<path d="M156 132 C164 110 182 98 200 100 C218 98 236 110 244 132 C226 120 214 126 200 118 C186 126 174 120 156 132 Z" fill="' + fill + '"/>';
   }
 
-  function coily(c, d, l) {
-    let out = '<ellipse cx="200" cy="158" rx="112" ry="104" fill="' + c + '"/>';
-    for (let i = 0; i < 18; i++) {
-      const a = (Math.PI * 2 * i) / 18;
-      const x = 200 + Math.cos(a) * 98;
-      const y = 158 + Math.sin(a) * 90;
-      out += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="14" fill="' + (i % 2 ? d : c) + '"/>';
-      out += '<circle cx="' + (x - 3).toFixed(1) + '" cy="' + (y - 3).toFixed(1) + '" r="4" fill="' + l + '" opacity="0.4"/>';
+  function bangsFull(fill) {
+    return '<path d="M148 134 C154 106 176 94 200 94 C224 94 246 106 252 134 C232 120 218 128 200 118 C182 128 168 120 148 134 Z" fill="' + fill + '"/>';
+  }
+
+  function bangsSwept(fill) {
+    return '<path d="M150 130 C164 104 196 92 230 112 C244 122 242 136 226 136 C206 122 184 132 164 126 C152 134 148 132 150 130 Z" fill="' + fill + '"/>';
+  }
+
+  function bangsShort(fill) {
+    return '<path d="M166 128 C174 108 186 98 200 100 C214 98 226 108 234 128 C220 118 210 124 200 116 C190 124 180 118 166 128 Z" fill="' + fill + '"/>';
+  }
+
+  function lockStraight(side, fill) {
+    if (side < 0) {
+      return '<path d="M128 168 C112 198 98 246 100 306 C102 354 116 392 132 400 C148 406 158 386 150 360 C140 318 136 268 136 226 C136 196 140 176 128 168 Z" fill="' + fill + '"/>';
     }
-    return out;
+    return '<path d="M272 168 C288 198 302 246 300 306 C298 354 284 392 268 400 C252 406 242 386 250 360 C260 318 264 268 264 226 C264 196 260 176 272 168 Z" fill="' + fill + '"/>';
   }
 
-  function braidStrand(x0, y0, x1, y1, segments, c, d) {
-    let out = "";
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const x = x0 + (x1 - x0) * t;
+  function waveLock(side, fill) {
+    const sign = side < 0 ? -1 : 1;
+    const x0 = 200 + sign * 84;
+    const y0 = 166;
+    const y1 = 408;
+    const amp = 22;
+    const steps = 32;
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
       const y = y0 + (y1 - y0) * t;
-      const ox = i % 2 === 0 ? -7 : 7;
-      out += '<ellipse cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" rx="11" ry="8" fill="' + (i % 2 ? d : c) + '" transform="rotate(' + ((i % 2 ? -18 : 18)) + " " + x.toFixed(1) + " " + y.toFixed(1) + ')"/>';
+      const x = x0 + sign * Math.sin(t * Math.PI * 2.5) * amp;
+      pts.push([x, y]);
     }
-    return out;
+    const left = [];
+    const right = [];
+    for (let i = 0; i < pts.length; i++) {
+      const prev = pts[Math.max(0, i - 1)];
+      const next = pts[Math.min(pts.length - 1, i + 1)];
+      let dx = next[0] - prev[0];
+      let dy = next[1] - prev[1];
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len;
+      dy /= len;
+      const w = 15 * (1 - (i / steps) * 0.28);
+      left.push([pts[i][0] - dy * w, pts[i][1] + dx * w]);
+      right.push([pts[i][0] + dy * w, pts[i][1] - dx * w]);
+    }
+    let d = "M " + left[0][0].toFixed(1) + " " + left[0][1].toFixed(1);
+    for (let i = 1; i < left.length; i++) d += " L " + left[i][0].toFixed(1) + " " + left[i][1].toFixed(1);
+    const tip = pts[pts.length - 1];
+    d += " Q " + tip[0].toFixed(1) + " " + (tip[1] + 16).toFixed(1) + " " + right[right.length - 1][0].toFixed(1) + " " + right[right.length - 1][1].toFixed(1);
+    for (let i = right.length - 2; i >= 0; i--) d += " L " + right[i][0].toFixed(1) + " " + right[i][1].toFixed(1);
+    return '<path d="' + d + ' Z" fill="' + fill + '"/>';
   }
 
-  function scalp(c) {
-    return '<ellipse cx="200" cy="160" rx="74" ry="66" fill="' + c + '"/>';
+  function longSheet(fill) {
+    return '<path d="M134 164 C118 132 158 86 200 82 C242 86 282 132 266 164 C282 236 294 332 278 424 C264 496 234 518 200 512 C166 518 136 496 122 424 C106 332 118 236 134 164 Z" fill="' + fill + '"/>';
   }
 
-  function hairLayers(p) {
-    const c = p.hairColor;
-    const d = Paint.darken(c, 0.16);
-    const l = Paint.lighten(c, 0.22);
+  function wavySheet(fill) {
+    return '<path d="M132 166 C114 128 158 82 200 78 C242 82 286 128 268 166 C284 230 292 320 276 408 C264 478 236 514 200 510 C164 514 136 478 124 408 C108 320 116 230 132 166 Z" fill="' + fill + '"/>';
+  }
+
+  function cloud(cx, cy, rx, ry, bumps, puff, fill) {
+    let d = "";
+    for (let i = 0; i < bumps; i++) {
+      const a1 = (Math.PI * 2 * (i + 0.5)) / bumps;
+      const a2 = (Math.PI * 2 * (i + 1)) / bumps;
+      const x = cx + Math.cos(a1) * rx * puff;
+      const y = cy + Math.sin(a1) * ry * puff;
+      const x2 = cx + Math.cos(a2) * rx;
+      const y2 = cy + Math.sin(a2) * ry;
+      if (i === 0) d += "M " + (cx + rx).toFixed(1) + " " + cy.toFixed(1) + " ";
+      d += "Q " + x.toFixed(1) + " " + y.toFixed(1) + " " + x2.toFixed(1) + " " + y2.toFixed(1) + " ";
+    }
+    return '<path d="' + d + 'Z" fill="' + fill + '"/>';
+  }
+
+  function hairTie(x, y, color) {
+    return '<rect x="' + (x - 11) + '" y="' + (y - 5) + '" width="22" height="10" rx="5" fill="' + color + '"/>';
+  }
+
+  function braid(x0, y0, x1, y1, bend, ink, tie) {
+    const mx = (x0 + x1) / 2 + bend;
+    const my = (y0 + y1) / 2;
+    return '<path d="M ' + x0 + " " + y0 + " Q " + mx.toFixed(1) + " " + my.toFixed(1) + " " + x1 + " " + y1 + '" fill="none" stroke="' + ink.c + '" stroke-width="18" stroke-linecap="round"/>' +
+      '<path d="M ' + (x1 - 7) + " " + (y1 + 1) + " Q " + x1 + " " + (y1 + 22) + " " + (x1 + 7) + " " + (y1 + 2) +
+      " Q " + x1 + " " + (y1 + 12) + " " + (x1 - 7) + " " + (y1 + 1) + ' Z" fill="' + ink.c + '"/>' +
+      hairTie(x1, y1, tie);
+  }
+
+  function twistRibbon(x, y0, y1, color, phase) {
+    const span = y1 - y0;
+    const yA = y0 + span * 0.33;
+    const yB = y0 + span * 0.66;
+    const a = Math.sin(phase) * 9;
+    const b = Math.sin(phase + 1.6) * 9;
+    return '<path d="M ' + x + " " + y0 + " C " + (x + a).toFixed(1) + " " + yA.toFixed(1) + " " + (x - b).toFixed(1) + " " + yB.toFixed(1) + " " + (x + a * 0.25).toFixed(1) + " " + y1 + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round"/>';
+  }
+
+  function haloBand(fill) {
+    return '<path d="M134 116 C146 84 170 70 200 70 C230 70 254 84 266 116 C246 98 224 90 200 92 C176 90 154 98 134 116 Z" fill="' + fill + '"/>';
+  }
+
+  function sideWisp(side, fill) {
+    if (side < 0) {
+      return '<path d="M136 168 C126 188 128 208 140 214 C148 206 146 186 140 172 Z" fill="' + fill + '"/>';
+    }
+    return '<path d="M264 168 C274 188 272 208 260 214 C252 206 254 186 260 172 Z" fill="' + fill + '"/>';
+  }
+
+  function layersOf(back, mid, front, defs) {
+    return { back: back || "", mid: mid || "", front: front || "", defs: defs || "" };
+  }
+
+  function hairLayers(p, uid) {
+    const ink = hairInk(uid, p.hairColor);
     const tie = p.outfitAccent;
+    const cap = hairCap(ink.fill);
     switch (p.hair) {
       case "long":
-        return { back: longStraight(c, d, l), mid: "", front: bangs(c, l) };
+        return layersOf(
+          longSheet(ink.fill),
+          lockStraight(-1, ink.c) + lockStraight(1, ink.c),
+          bangsFull(ink.c),
+          ink.defs
+        );
       case "wavy":
-        return { back: longWavy(c, d, l), mid: "", front: bangs(c, l) };
+        return layersOf(
+          wavySheet(ink.fill),
+          waveLock(-1, ink.c) + waveLock(1, ink.c),
+          bangsSwept(ink.c),
+          ink.defs
+        );
       case "curly":
-        return {
-          back: curly(c, d, l),
-          mid: "",
-          front: '<circle cx="168" cy="128" r="13" fill="' + c + '"/><circle cx="200" cy="116" r="14" fill="' + d + '"/><circle cx="232" cy="128" r="13" fill="' + c + '"/>'
-        };
+        return layersOf(
+          cloud(200, 156, 90, 80, 14, 1.12, ink.fill),
+          "",
+          bangsSoft(ink.c),
+          ink.defs
+        );
       case "coily":
-        return { back: coily(c, d, l), mid: "", front: "" };
+        return layersOf(
+          cloud(200, 150, 108, 98, 16, 1.1, ink.fill),
+          "",
+          bangsShort(ink.c),
+          ink.defs
+        );
       case "braids":
-        return {
-          back: scalp(c),
-          mid: braidStrand(150, 210, 136, 450, 16, c, d) + braidStrand(250, 210, 264, 450, 16, c, d) +
-            '<rect x="124" y="446" width="24" height="10" rx="4" fill="' + tie + '"/><rect x="252" y="446" width="24" height="10" rx="4" fill="' + tie + '"/>',
-          front: bangs(c, l)
-        };
+        return layersOf(
+          cap +
+            '<path d="M150 158 Q132 186 114 214" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>' +
+            '<path d="M250 158 Q268 186 286 214" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>',
+          braid(114, 210, 102, 430, -12, ink, tie) + braid(286, 210, 298, 430, 12, ink, tie),
+          bangsSoft(ink.c),
+          ink.defs
+        );
       case "sidebraid":
-        return {
-          back: scalp(c) + '<path d="M230 180 C250 220 240 260 250 300" fill="none" stroke="' + c + '" stroke-width="18" stroke-linecap="round"/>',
-          mid: braidStrand(236, 200, 268, 460, 16, c, d) + '<rect x="256" y="456" width="24" height="10" rx="4" fill="' + tie + '"/>',
-          front: bangs(c, l)
-        };
+        return layersOf(
+          cap + '<path d="M228 146 Q266 172 292 208" fill="none" stroke="' + ink.fill + '" stroke-width="16" stroke-linecap="round"/>',
+          braid(292, 204, 312, 418, 14, ink, tie),
+          bangsSwept(ink.c),
+          ink.defs
+        );
       case "bun":
-        return {
-          back: scalp(c) + '<circle cx="200" cy="84" r="34" fill="' + c + '"/><ellipse cx="188" cy="72" rx="10" ry="7" fill="' + l + '" opacity="0.55"/><rect x="174" y="108" width="52" height="12" rx="6" fill="' + d + '"/>',
-          mid: "",
-          front: bangs(c, l)
-        };
+        return layersOf(
+          cap +
+            '<circle cx="200" cy="68" r="28" fill="' + ink.fill + '"/>' +
+            '<path d="M174 94 Q200 108 226 94" fill="none" stroke="' + ink.c + '" stroke-width="7" stroke-linecap="round"/>' +
+            sideWisp(-1, ink.c) + sideWisp(1, ink.c),
+          "",
+          bangsShort(ink.c),
+          ink.defs
+        );
       case "buns":
-        return {
-          back: scalp(c) +
-            '<circle cx="124" cy="128" r="28" fill="' + c + '"/><circle cx="276" cy="128" r="28" fill="' + c + '"/>' +
-            '<ellipse cx="114" cy="118" rx="8" ry="6" fill="' + l + '" opacity="0.5"/><ellipse cx="266" cy="118" rx="8" ry="6" fill="' + l + '" opacity="0.5"/>' +
-            '<rect x="108" y="148" width="30" height="8" rx="4" fill="' + d + '"/><rect x="262" y="148" width="30" height="8" rx="4" fill="' + d + '"/>',
-          mid: "",
-          front: bangs(c, l)
-        };
+        return layersOf(
+          cap +
+            '<path d="M164 124 C148 108 136 96 128 98" fill="none" stroke="' + ink.fill + '" stroke-width="14" stroke-linecap="round"/>' +
+            '<path d="M236 124 C252 108 264 96 272 98" fill="none" stroke="' + ink.fill + '" stroke-width="14" stroke-linecap="round"/>' +
+            '<circle cx="128" cy="96" r="26" fill="' + ink.fill + '"/><circle cx="272" cy="96" r="26" fill="' + ink.fill + '"/>',
+          "",
+          bangsFull(ink.c),
+          ink.defs
+        );
       case "bob":
-        return {
-          back: '<path d="M122 176 C110 214 116 258 142 282 Q200 308 258 282 C284 258 290 214 278 176 Q200 132 122 176 Z" fill="' + c + '"/>',
-          mid: "",
-          front: bangs(c, l)
-        };
+        return layersOf(
+          '<path d="M126 164 C114 130 154 92 200 88 C246 92 286 130 274 164 C290 208 284 256 248 278 C226 294 212 262 200 256 C188 262 174 294 152 278 C116 256 110 208 126 164 Z" fill="' + ink.fill + '"/>',
+          "",
+          bangsFull(ink.c),
+          ink.defs
+        );
       case "pixie":
-        return {
-          back: '<ellipse cx="200" cy="158" rx="76" ry="62" fill="' + c + '"/><path d="M228 126 Q274 114 266 162 Q244 140 226 148 Z" fill="' + c + '"/>',
-          mid: "",
-          front: '<path d="M150 156 Q178 124 214 140 Q190 156 164 160 Q176 148 150 156 Z" fill="' + c + '"/>'
-        };
+        return layersOf(
+          '<path d="M144 178 C138 140 164 112 200 108 C236 112 262 140 256 178 C242 160 222 150 200 152 C178 150 158 160 144 178 Z" fill="' + ink.fill + '"/>' +
+            '<path d="M248 136 C274 126 280 158 258 166 C248 154 246 144 248 136 Z" fill="' + ink.c + '"/>',
+          "",
+          bangsSwept(ink.c),
+          ink.defs
+        );
       case "pony":
-        return {
-          back: scalp(c) + '<path d="M226 116 C312 148 330 250 286 340 C266 364 248 308 272 214 C286 156 252 128 226 138 Z" fill="' + c + '"/><circle cx="230" cy="122" r="8" fill="' + d + '"/>' +
-            '<path d="M250 160 C300 210 304 280 274 328" fill="none" stroke="' + l + '" stroke-width="6" stroke-linecap="round" opacity="0.4"/>',
-          mid: "",
-          front: bangs(c, l)
-        };
+        return layersOf(
+          cap + '<path d="M222 118 C252 108 272 132 286 158" fill="none" stroke="' + ink.fill + '" stroke-width="18" stroke-linecap="round"/>',
+          '<path d="M286 152 C312 170 326 222 310 288 C298 342 322 374 302 394 C284 410 270 382 280 342 C292 292 276 214 280 170 C286 156 278 148 286 152 Z" fill="' + ink.fill + '"/>' +
+            hairTie(292, 164, tie),
+          bangsShort(ink.c),
+          ink.defs
+        );
       case "twists": {
-        let mid = "";
-        for (let i = 0; i < 9; i++) {
-          const x = 148 + i * 13;
-          mid += '<path d="M ' + x + " 206 Q " + (x + 5) + " 250 " + x + " 292 Q " + (x - 5) + " 332 " + x + ' 372" stroke="' + (i % 2 ? d : c) + '" stroke-width="5.5" fill="none" stroke-linecap="round"/>';
-        }
-        return { back: scalp(c), mid: mid, front: bangs(c, l) };
+        let back = cap;
+        [[100, 0.4, 22], [118, 1.7, 0]].forEach(function (item) {
+          back += twistRibbon(item[0], 188, 360 + item[2], ink.c, item[1]);
+        });
+        [[282, 0.9, 0], [300, 2.2, 18]].forEach(function (item) {
+          back += twistRibbon(item[0], 188, 368 + item[2], ink.c, item[1]);
+        });
+        return layersOf(back, "", bangsShort(ink.c), ink.defs);
       }
-      case "halo": {
-        let back = '<ellipse cx="200" cy="176" rx="68" ry="58" fill="' + c + '"/>';
-        for (let i = 0; i < 16; i++) {
-          const a = (Math.PI * 2 * i) / 16;
-          const x = 200 + Math.cos(a) * 78;
-          const y = 168 + Math.sin(a) * 72;
-          back += '<ellipse cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" rx="12" ry="9" fill="' + (i % 2 ? d : c) + '" transform="rotate(' + ((a * 180) / Math.PI).toFixed(1) + " " + x.toFixed(1) + " " + y.toFixed(1) + ')"/>';
-        }
-        return { back: back, mid: "", front: "" };
-      }
+      case "halo":
+        return layersOf(
+          hairCap(ink.fill),
+          "",
+          haloBand(ink.fill),
+          ink.defs
+        );
       default:
-        return { back: longWavy(c, d, l), mid: "", front: bangs(c, l) };
+        return layersOf(wavySheet(ink.fill), waveLock(-1, ink.c) + waveLock(1, ink.c), bangsSwept(ink.c), ink.defs);
     }
   }
 
@@ -788,26 +904,49 @@
   }
 
   function extraAnchor(style) {
-    if (style === "coily") return [270, 96];
-    if (style === "bun") return [238, 62];
-    if (style === "buns") return [308, 116];
-    if (style === "curly") return [300, 150];
-    if (style === "pony") return [168, 150];
-    return [266, 156];
+    const spots = {
+      long: [278, 154],
+      wavy: [286, 166],
+      curly: [292, 118],
+      coily: [286, 86],
+      braids: [118, 198],
+      sidebraid: [304, 186],
+      bun: [236, 74],
+      buns: [284, 90],
+      bob: [276, 164],
+      pixie: [260, 140],
+      pony: [152, 158],
+      twists: [108, 188],
+      halo: [268, 100]
+    };
+    return spots[style] || [278, 154];
+  }
+
+  function bowShape(x, y, color) {
+    const knot = Paint.mix(color, "#1a1210", 0.22);
+    const hi = Paint.lighten(color, 0.34);
+    function loop(sign) {
+      return '<path d="M ' + x + " " + y +
+        " C " + (x + sign * 8) + " " + (y - 12) + " " + (x + sign * 28) + " " + (y - 14) + " " + (x + sign * 26) + " " + y +
+        " C " + (x + sign * 28) + " " + (y + 14) + " " + (x + sign * 8) + " " + (y + 12) + " " + x + " " + y +
+        ' Z" fill="' + color + '"/>';
+    }
+    function tail(sign) {
+      return '<path d="M ' + (x + sign * 2) + " " + (y + 4) +
+        " Q " + (x + sign * 14) + " " + (y + 16) + " " + (x + sign * 8) + " " + (y + 28) +
+        " Q " + (x + sign * 3) + " " + (y + 16) + " " + (x + sign) + " " + (y + 6) +
+        ' Z" fill="' + color + '"/>';
+    }
+    return loop(-1) + loop(1) + tail(-1) + tail(1) +
+      '<ellipse cx="' + x + '" cy="' + y + '" rx="5.4" ry="6.2" fill="' + knot + '"/>' +
+      '<ellipse cx="' + (x - 1.2) + '" cy="' + (y - 1.8) + '" rx="1.8" ry="2" fill="' + hi + '"/>';
   }
 
   function hairExtra(p) {
     if (p.hairExtra === "none") return "";
     const anchor = extraAnchor(p.hair);
-    if (p.hairExtra === "flower") return flowerShape(anchor[0], anchor[1], 11, p.extraColor, "#f2c14e");
-    const x = anchor[0];
-    const y = anchor[1];
-    const color = p.extraColor;
-    const d = Paint.darken(color, 0.15);
-    return '<ellipse cx="' + (x - 12) + '" cy="' + y + '" rx="12" ry="8" fill="' + color + '"/><ellipse cx="' + (x + 12) + '" cy="' + y + '" rx="12" ry="8" fill="' + color + '"/>' +
-      '<circle cx="' + x + '" cy="' + y + '" r="5" fill="' + d + '"/>' +
-      '<path d="M ' + (x - 4) + " " + (y + 4) + " L " + (x - 14) + " " + (y + 20) + " L " + (x - 2) + " " + (y + 12) + ' Z" fill="' + color + '"/>' +
-      '<path d="M ' + (x + 4) + " " + (y + 4) + " L " + (x + 14) + " " + (y + 20) + " L " + (x + 2) + " " + (y + 12) + ' Z" fill="' + color + '"/>';
+    if (p.hairExtra === "flower") return flowerShape(anchor[0], anchor[1], 10, p.extraColor, "#f2c14e");
+    return bowShape(anchor[0], anchor[1], p.extraColor);
   }
 
   function jewels(p) {
@@ -908,15 +1047,16 @@
     const outfit = OUTFITS.filter(function (item) { return item.id === p.outfit; })[0];
     const skin = p.skin;
     const shadow = Paint.darken(skin, 0.18);
-    const layers = hairLayers(p);
+    const layers = hairLayers(p, uid);
     const layout = faceLayout(p.face);
-    const showEars = p.hair === "pixie" || p.hair === "bob" || p.hair === "bun" || p.hair === "buns" || p.hair === "halo";
+    const showEars = p.hair === "pixie" || p.hair === "bun" || p.hair === "buns" || p.hair === "halo";
     const arm = arms(p, outfit);
     const winkRight = p.expression === "wink";
     const shyShift = p.expression === "shy" ? 3 : 0;
     let view = "0 0 400 520";
-    if (options.plain) view = "48 24 304 496";
-    if (options.thumb) view = "78 36 244 482";
+    if (options.focus === "head") view = "64 8 272 312";
+    else if (options.plain) view = "48 24 304 496";
+    else if (options.thumb) view = "78 36 244 482";
     const size = options.export ? ' width="800" height="1040"' : "";
     const body = (options.plain ? "" : backdrop(uid)) +
       '<ellipse cx="200" cy="496" rx="78" ry="12" fill="rgba(90,49,68,0.12)"/>' +
@@ -947,7 +1087,8 @@
       pet(p) +
       "</g>";
     return '<svg xmlns="http://www.w3.org/2000/svg"' + size + ' viewBox="' + view + '" role="img" aria-label="' + Paint.esc(displayName(p)) + '">' +
-      '<defs><filter id="' + uid + 'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="2.5" flood-color="#6b3a4a" flood-opacity="0.16"/></filter></defs>' +
+      '<defs><filter id="' + uid + 'sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="2.5" flood-color="#6b3a4a" flood-opacity="0.16"/></filter>' +
+      (layers.defs || "") + "</defs>" +
       body + "</svg>";
   }
 

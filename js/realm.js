@@ -1201,37 +1201,100 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     else if (id === "blossom") drawBlossomTile(ctx, x, y);
   }
 
-  function miniHair(ctx, style) {
-    if (style === "coily" || style === "curly") {
-      ctx.beginPath();
-      ctx.arc(0, -30, 12, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-    if (style === "buns" || style === "bun") {
-      ctx.beginPath();
-      ctx.arc(-7, -38, 4.5, 0, Math.PI * 2);
-      ctx.arc(7, -38, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-    if (style === "pixie" || style === "bob" || style === "halo") {
-      ctx.beginPath();
-      ctx.arc(0, -30, 9, Math.PI, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-    if (style === "braids" || style === "twists" || style === "sidebraid") {
-      ctx.fillRect(-8, -36, 16, 8);
-      ctx.fillRect(-7, -22, 3, 14);
-      ctx.fillRect(4, -22, 3, 14);
-      return;
-    }
+  function miniLock(ctx, x0, y0, x1, y1, width, bend) {
     ctx.beginPath();
-    ctx.arc(0, -30, 9, Math.PI, Math.PI * 2);
+    ctx.moveTo(x0, y0);
+    ctx.quadraticCurveTo((x0 + x1) / 2 + bend, (y0 + y1) / 2, x1, y1);
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  function miniCap(ctx, rx, ry) {
+    ctx.beginPath();
+    ctx.ellipse(0, -31, rx, ry, 0, Math.PI, 0);
     ctx.fill();
-    ctx.fillRect(-8, -30, 4, 16);
-    ctx.fillRect(4, -30, 4, 16);
+  }
+
+  function miniHair(ctx, style) {
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (style === "coily") {
+      ctx.beginPath();
+      ctx.arc(0, -29, 15, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "curly") {
+      ctx.beginPath();
+      ctx.arc(0, -29, 12.5, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "bun") {
+      miniCap(ctx, 8, 6.5);
+      ctx.beginPath();
+      ctx.arc(0, -42, 5, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "buns") {
+      miniCap(ctx, 8, 6.5);
+      ctx.beginPath();
+      ctx.arc(-9, -39, 4.2, 0, Math.PI * 2);
+      ctx.arc(9, -39, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "pixie") {
+      miniCap(ctx, 8.2, 6.2);
+      miniLock(ctx, 6, -34, 13, -30, 2.2, 1);
+      return;
+    }
+    if (style === "bob") {
+      ctx.beginPath();
+      ctx.ellipse(0, -26, 11, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    if (style === "halo") {
+      miniCap(ctx, 8, 6.2);
+      ctx.beginPath();
+      ctx.ellipse(0, -37, 10, 3.1, 0, 0, Math.PI * 2);
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+      return;
+    }
+    if (style === "pony") {
+      miniCap(ctx, 8.4, 6.6);
+      miniLock(ctx, 4, -36, 13, -6, 3.3, 3);
+      return;
+    }
+    if (style === "sidebraid") {
+      miniCap(ctx, 8.4, 6.6);
+      miniLock(ctx, 5, -28, 12, -1, 2.7, 2);
+      return;
+    }
+    if (style === "braids" || style === "twists") {
+      miniCap(ctx, 8.4, 6.6);
+      const width = style === "twists" ? 2.1 : 2.6;
+      miniLock(ctx, -6, -26, -10, -1, width, -2);
+      miniLock(ctx, 6, -26, 10, -1, width, 2);
+      return;
+    }
+    miniCap(ctx, 9, 7);
+    const bend = style === "wavy" ? 3.5 : 0;
+    miniLock(ctx, -7, -26, -11, -3, 3.1, -bend);
+    miniLock(ctx, 7, -26, 11, -3, 3.1, bend);
+  }
+
+  function spriteCrownDy(style) {
+    if (style === "coily") return -12;
+    if (style === "curly") return -8;
+    if (style === "bun") return -9;
+    if (style === "buns") return -6;
+    if (style === "halo") return -4;
+    return 0;
   }
 
   function drawPet(ctx, pose, princess) {
@@ -1363,9 +1426,16 @@ function drawGate(ctx, x, y, cells, c, r, open) {
     ctx.fillRect(-4 + look, -30, 2, 2);
     ctx.fillRect(2 + look, -30, 2, 2);
     if (princess.crown && princess.crown !== "none") {
+      const dy = spriteCrownDy(princess.hair);
       ctx.fillStyle = princess.crownColor;
-      ctx.fillRect(-6, -38, 12, 3);
-      ctx.fillRect(-1.5, -43, 3, 6);
+      ctx.beginPath();
+      ctx.moveTo(-7, -36 + dy);
+      ctx.lineTo(-4, -42 + dy);
+      ctx.lineTo(0, -37 + dy);
+      ctx.lineTo(4, -44 + dy);
+      ctx.lineTo(7, -36 + dy);
+      ctx.closePath();
+      ctx.fill();
     }
     ctx.restore();
   }

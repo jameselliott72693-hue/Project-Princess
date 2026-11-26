@@ -355,6 +355,63 @@ main {
 
 .choice-label, .tool span { font-size: 0.92rem; line-height: 1.1; text-align: center; }
 
+.hair-panel .panel-title { margin: 16px 0 8px; }
+.hair-panel > .panel-title:first-child { margin-top: 2px; }
+
+.hair-grid {
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.hair-grid .choice {
+  gap: 6px;
+  padding: 6px 6px 8px;
+  min-width: 0;
+}
+
+.hair-grid .choice-art {
+  height: 124px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 16%, #fff 0 16px, transparent 17px),
+    linear-gradient(180deg, #ffe4f2 0%, #fff6ea 46%, #e5f6d4 100%);
+}
+
+.hair-grid .choice-art svg { width: 100%; height: 124px; }
+
+.hair-grid .choice-label {
+  min-height: 2.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+}
+
+.hair-grid .choice.is-on {
+  border-color: var(--rose);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(199, 59, 100, 0.35);
+}
+
+.hair-grid .choice.is-on .choice-label { color: var(--rose-deep); }
+
+.clip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.hair-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.hair-colors .swatch-row { margin: 0; flex: 1 1 180px; }
+
+.hair-panel .swatch.is-on {
+  transform: none;
+  box-shadow: 0 0 0 3px var(--rose-deep);
+}
+
 .tool canvas { width: 64px; height: 64px; display: block; }
 
 .swatch-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
@@ -691,6 +748,9 @@ canvas.board.slide-mode { touch-action: pan-x pan-y; }
 
 @media (max-width: 720px) {
   .stage-art svg { height: min(34vh, 320px); }
+  .hair-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .hair-grid .choice-art,
+  .hair-grid .choice-art svg { height: 108px; }
   .home-grid { grid-template-columns: 1fr; }
   .home-card { min-height: 112px; flex-direction: row; font-size: 1.8rem; }
   .template-grid { grid-template-columns: 1fr; }
@@ -700,6 +760,9 @@ canvas.board.slide-mode { touch-action: pan-x pan-y; }
 @media (max-width: 420px) {
   .btn.tiny span { font-size: 0.92rem; }
   .topbar { padding: 8px; gap: 6px; }
+  .hair-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .clip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hair-grid .choice-label { font-size: 0.86rem; }
 }
 
 .book {
